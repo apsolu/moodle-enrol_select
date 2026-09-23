@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/apsolu/enrol_select/actions/workflows/moodle-ci.yml/badge.svg?branch=main)](https://github.com/apsolu/enrol_select/actions)
 [![Coverage Status](https://coveralls.io/repos/github/apsolu/enrol_select/badge.svg?branch=main)](https://coveralls.io/github/apsolu/enrol_select?branch=main)
-[![Moodle Status](https://img.shields.io/badge/moodle-5.0-blue)](https://moodle.org)
+[![Moodle Status](https://img.shields.io/badge/moodle-5.2-blue)](https://moodle.org)
 
 ## Description
 
@@ -18,7 +18,7 @@ Ce module réunit sur une page l'ensemble de l'offre de formation proposée aux 
 
 ```bash
 cd /your/moodle/path
-git clone https://github.com/apsolu/enrol_select enrol/select
+git clone https://github.com/apsolu/moodle-enrol_select enrol/select
 php admin/cli/upgrade.php
 ```
 
