@@ -102,7 +102,8 @@ span.select2-container {
     display: none;
 }
 
-#apsolu-enrol-form {
+#apsolu-enrol-form,
+#page-enrol-select-overview-enrol form {
     background-color: #fff;
     padding: 1.5em;
     border-radius: .5rem;
@@ -120,8 +121,7 @@ span.select2-container {
         }
     }
 
-    & .form-text {
-        font-size: var(--bs-body-font-size);
+    & .form-readonly {
         color: var(--bs-body-color);
 
         & div:has(fieldset) {
@@ -148,7 +148,25 @@ span.select2-container {
         border-radius: .5rem;
         padding: 0.25rem 1rem;
         font-weight: 600;
+        font-size: var(--bs-body-font-size);
     }
+
+    & .frozen div[data-fieldtype='select'] {
+        padding-top: calc(0.375rem + var(--bs-border-width));
+    }
+
+    & div.checkbox .form-check {
+        display: flex;
+
+        & label {
+            flex-shrink: 1;
+            margin-left: .5rem;
+        }
+    }
+}
+
+#page-enrol-select-overview .help-popover[role="tooltip"] {
+    z-index: 100002;
 }
 
 #page-enrol-select-overview .block_navigation,

@@ -26,50 +26,68 @@
     * none
 
     Context variables required for this template:
-    * wwwroot Correspond à la valeur de la variable Moodle $CFG->wwwroot.
-    * style Correspond au type d'alert (success, warning...)
-    * mainalert
-        * style
-        * message
-
+    * wwwroot correspond à la valeur de la variable Moodle $CFG->wwwroot
+    * unenroled témoin de la procédure de désinscription
+    * enrolment résultat de la procédure d'inscription ou modification d'inscription
+        * style style de la notification
+        * message string résultat de la procédure d'inscription
+        * list string précisions sur le statut de l'inscription (liste principale, complémentaire...)
+        * complementaryinfo string informations supplémentaires pour la finalisation de l'inscription
+        * countpayments int les paiements à effectuer pour valider l'inscription
+        * paymentmessage string message de rappel sur les paiements
+        * courseinformation string informations sur le cours
+    * failedenrolment boolean témoin de l'échec de la tentative d'inscription
+        * error string message d'erreur
     Example context (json):
     {
-        "wwwroot": "https://apsolu.fr"
+        "wwwroot": "https://apsolu.fr",
+        "unenroled": false,
+        "enroled": false,
+        "failedenrolment": false
     }
 }}
 
-{{! Alert principale }}
+{{! Désinscription }}
 {{#unenroled}}
-<div class="alert alert-success text-center">
-    <p>{{#str}}unenrolmentsaved, enrol_select{{/str}}
-</div>
-<p class="text-center">
-    <a class="btn btn-default btn-secondary apsolu-cancel-a" href="{{wwwroot}}/enrol/select/overview.php">{{#str}}continue{{/str}}</a>
-</p>
+    <div class="alert alert-success text-center">
+        <p>{{#str}}unenrolmentsaved, enrol_select{{/str}}
+    </div>
+    <p class="text-center">
+        <a class="btn btn-default btn-secondary apsolu-cancel-a" href="{{wwwroot}}/enrol/select/overview.php">{{#str}}continue{{/str}}</a>
+    </p>
 {{/unenroled}}
 
-{{#enroled}}
-<div class="alert alert-{{enroledstyle}} text-center">
-    <p>
-        {{enroledmessage}}
-         {{#enroledlist}}
-            <strong>{{enroledlist}}</strong>
-        {{/enroledlist}}
+{{! Inscription ou modification de l'inscription }}
+{{#enrolment}}
+    <div class="alert alert-{{style}} text-center">
+        <p>
+            {{message}}
+            {{#list}}
+                <strong>{{list}}</strong>
+            {{/list}}
+        </p>
+        {{#complementaryinfo}}
+            <p><strong>{{complementaryinfo}}</strong></p>
+        {{/complementaryinfo}}
+    </div>
+        {{#countpayments}}
+            <div class="alert alert-danger text-center">{{{paymentmessage}}}</div>
+        {{/countpayments}}
+        {{#courseinformation}}
+            <p class="fw-bold">{{#str}}additional_information, local_apsolu{{/str}}</p><div>{{courseinformation}}</div>
+        {{/courseinformation}}
+            <p class="text-center">
+                {{#countpayments}}
+                    <a class="btn btn-default btn-primary me-3" href="{{wwwroot}}/local/apsolu/payment/index.php">{{#str}}pay, local_apsolu{{/str}}</a>
+                {{/countpayments}}
+                <a class="btn btn-default btn-secondary apsolu-cancel-a" href="{{wwwroot}}/enrol/select/overview.php">{{#str}}continue_my_enrolments, enrol_select{{/str}}</a>
+            </p>
+{{/enrolment}}
+
+{{! Message d'erreur : échec de l'inscription }}
+{{#failedenrolment}}
+    <div class="alert alert-danger"><p>{{error}}</p></div>
+    <p class="text-center">
+        <a class="btn btn-default btn-secondary apsolu-cancel-a" href="{{wwwroot}}/enrol/select/overview.php">{{#str}}cancel{{/str}}</a>
     </p>
-    {{#complementaryinfo}}
-        <p><strong>{{complementaryinfo}}</strong></p>
-    {{/complementaryinfo}}
-</div>
-{{#countpayments}}
-<div class="alert alert-danger text-center">{{{paymentmessage}}}</div>
-{{/countpayments}}
-{{#courseinformation}}
-    <p class="fw-bold">{{#str}}additional_information, local_apsolu{{/str}}</p><div>{{courseinformation}}</div>
-{{/courseinformation}}
-<p class="text-center">
-    {{#countpayments}}
-        <a class="btn btn-default btn-primary me-3" href="{{wwwroot}}/local/apsolu/payment/index.php">{{#str}}pay, local_apsolu{{/str}}</a>
-    {{/countpayments}}
-    <a class="btn btn-default btn-secondary apsolu-cancel-a" href="{{wwwroot}}/enrol/select/overview.php">{{#str}}continue_my_enrolments, enrol_select{{/str}}</a>
-</p>
-{{/enroled}}
+{{/failedenrolment}}

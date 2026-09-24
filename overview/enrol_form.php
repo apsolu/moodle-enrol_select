@@ -37,7 +37,7 @@ class enrol_select_form extends moodleform {
         global $CFG, $DB;
 
         $mform = $this->_form;
-        [$instance, $roles, $federationrequirement] = $this->_customdata;
+        [$instance, $federationrequirement, $roles, $finalform] = $this->_customdata;
 
         $title = html_writer::tag('div', html_writer::tag('h5', 'Inscription'), ['class' => 'enrol-popup-header']);
         $mform->addElement('html', $title);
@@ -46,10 +46,7 @@ class enrol_select_form extends moodleform {
         $attr = ['name' => 'fakefullname', 'class' => 'apsolu-custom-field' ];
         $fullname = html_writer::tag('div', $instance->fullname, $attr);
         $fullnamearr[] = &$mform->createElement('html', $fullname);
-        $mform->addGroup($fullnamearr, 'fullnamearr', get_string('course'), [' '], false, ['class' => 'form-text mb-4']);
-
-        $mform->addElement('hidden', 'fullname', null);
-        $mform->setType('fullname', PARAM_TEXT);
+        $mform->addGroup($fullnamearr, 'fullnamearr', get_string('course'), [' '], false, ['class' => 'form-readonly mb-4']);
 
         // Location field.
         if (isset($instance->location)) {
@@ -68,73 +65,74 @@ class enrol_select_form extends moodleform {
 
             $locationarr[] = &$mform->createElement('html', $location);
 
-            $mform->addGroup($locationarr, 'locationarr', $locationlabel, [' '], false, ['class' => 'form-text mb-4']);
+            $mform->addGroup($locationarr, 'locationarr', $locationlabel, [' '], false, ['class' => 'form-readonly mb-4']);
         }
 
         // Roles field.
-        if (empty($instance->role) || isset($instance->edit)) {
-            // Inscription ou modification d'inscription.
-            $attributes = count($roles) === 1 ? ['disabled' => 1] : [];
-            $mform->addElement('select', 'role', get_string('role', 'local_apsolu'), $roles, $attributes);
-            $mform->setType('role', PARAM_INT);
+        $attr = '';
+        if (!$finalform) {
+            $attr = ['class' => 'frozen']; // Champ rôle frozen s'il s'agit du formulaire intermédiaire (utilisateur déjà inscrit).
+            $fakerole = true;
+        } else if (count($roles) === 1) {
+            $attr = ['disabled']; // Champ rôle disabled s'il n'y a qu'un rôle possible.
+        }
+        $mform->addElement('select', 'role', get_string('role', 'local_apsolu'), $roles, $attr);
+        $mform->setType('role', PARAM_INT);
+        $role = empty($instance->role) ? array_key_first($roles) : $instance->role;
+        $mform->setDefault('role', $role);
 
-            // Federations fields.
+        if (isset($fakerole)) {
+            // Le rôle est affiché sous forme de texte.
+            $mform->freeze('role');
+        }
+
+        // Nouvelle inscription ou mode modification d'inscription.
+        if ($finalform) {
+            // Federations field.
             if ($federationrequirement !== APSOLU_FEDERATION_REQUIREMENT_FALSE) {
                 $isrequired = $federationrequirement === APSOLU_FEDERATION_REQUIREMENT_TRUE;
-                $attributes = $isrequired ? ['disabled' => 1] : [];
-                $federationvalue = $isrequired ? 1 : $instance->federation;
-                $mform->addElement('selectyesno', 'federation', get_string(
+                $mform->addElement('checkbox', 'federation', get_string(
                     $isrequired ? 'federation_required' : 'federation_optional',
                     'enrol_select'
-                ), $attributes);
-                $mform->addHelpButton('federation', $isrequired ? 'federation_required' : 'federation_optional', 'enrol_select');
-                $mform->setDefault('federation', $federationvalue);
+                ));
                 $mform->setType('federation', PARAM_INT);
+
+                $mform->addHelpButton('federation', $isrequired ? 'federation_required' : 'federation_optional', 'enrol_select');
+                $mform->setDefault('federation', 0);
             }
 
             // Acceptation des recommandations médicales.
-            if (
-                empty($instance->showpolicy) === false &&
-                (empty($CFG->sitepolicy) === false || is_file($CFG->dirroot . '/policy.html') === true)
-            ) {
+            $policy = empty($instance->showpolicy) === false &&
+                (empty($CFG->sitepolicy) === false || is_file($CFG->dirroot . '/policy.html') === true);
+            if ($policy) {
                 $url = $CFG->sitepolicy;
                 if (empty($url) === true) {
                     $url = $CFG->wwwroot . '/policy.html';
                 }
-                $policy[] = &$mform->createElement('checkbox', 'policy', get_string('policyagree', 'enrol_select', $url));
-                $mform->setDefault('policy', 0);
+                $mform->addElement('advcheckbox', 'policy', get_string('policyagree', 'enrol_select', $url));
                 $mform->setType('policy', PARAM_INT);
-                $mform->addGroup($policy, 'policies', '', [' '], false);
-                $mform->addRule('policies', get_string('required'), 'required', null, 'client');
+                $mform->setDefault('policy', 0);
             }
-        } else {
-            // Utilisateur déjà inscrit : on propose la désinscription ou la modification de l'inscription.
-            $attr = ['class' => 'col-md-9 d-flex flex-wrap pb-0 pe-md-0 felement', 'name' => 'fakerole' ];
-            $role = html_writer::tag('div', $roles[$instance->role], $attr);
-            $rolearr[] = &$mform->createElement('html', $role);
-            $mform->addGroup($rolearr, 'rolearr', get_string('role', 'local_apsolu'), [' '], false, ['class' => 'form-text mb-4']);
-
-            $mform->addElement('hidden', 'role', null);
-            $mform->setType('role', PARAM_TEXT);
         }
 
         // Submit buttons.
-        if (empty($instance->role)) {
-            $buttonarray[] = &$mform->createElement('submit', 'enrolbutton', get_string('enrol', 'enrol_select'));
+        // Bouton "Enregistrer" ou "S'inscrire" (en mode modification de l'inscription ou nouvelle inscription).
+        if ($finalform) {
+            $submitstr = empty($instance->role) == false ? get_string('save', 'admin') : get_string('enrol', 'enrol_select');
+            $buttonarray[] = &$mform->createElement('submit', 'enrolbutton', $submitstr);
         } else {
-            if (isset($instance->edit)) {
-                $buttonarray[] = &$mform->createElement('submit', 'enrolbutton', get_string('save', 'admin'));
-            } else {
-                if (count($roles) > 1) {
-                    $label = get_string('edit_enrol', 'enrol_select');
-                    $buttonarray[] = &$mform->createElement('submit', 'editenrol', $label);
-                }
-
-                $label = get_string('unenrol', 'enrol_select');
-                $buttonarray[] = &$mform->createElement('submit', 'unenrolbutton', $label);
+            // Bouton 'modifier l'inscription' et 'se désinscrire' (utilisateur déjà inscrit).
+            // Si plusieurs rôles autorisés dans ce cours : possibilité de modifier son inscription.
+            if (count($roles) > 1) {
+                $label = get_string('edit_enrol', 'enrol_select');
+                $buttonarray[] = &$mform->createElement('submit', 'editenrol', $label);
             }
+
+            $label = get_string('unenrol', 'enrol_select');
+            $buttonarray[] = &$mform->createElement('submit', 'unenrolbutton', $label);
         }
 
+        // Bouton 'Annuler'.
         $attributes = new stdClass();
         $attributes->href = $CFG->wwwroot . '/enrol/select/overview.php';
         $attributes->class = 'btn btn-default btn-secondary apsolu-cancel-a';
@@ -146,7 +144,42 @@ class enrol_select_form extends moodleform {
         $mform->addElement('hidden', 'enrolid', $instance->enrolid);
         $mform->setType('enrolid', PARAM_INT);
 
-        // Set default values.
-        $this->set_data($instance);
+        $mform->addElement('hidden', 'fullname', $instance->fullname);
+        $mform->setType('fullname', PARAM_TEXT);
+    }
+
+    /**
+     * Validation.
+     *
+     * @param array $data
+     * @param array $files
+     *
+     * @return array The errors that were found.
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        [$instance, $federationrequirement] = $this->_customdata;
+
+        // Vérifications ignorées lors de la désinscription.
+        if ($data['unenrolbutton'] == false) {
+            // En cas de modification de l'inscription : forcer la valeur du rôle à changer. Cela permet d'éviter
+            // les messages d'erreur pour les inscriptions réalisées sur un rôle dont le quota est dépassé.
+            if (empty($instance->role) == false && $data['role'] == $instance->role) {
+                $errors['role'] = get_string('error_unchanged_role', 'enrol_select');
+            }
+
+            // L'acceptation des recommandations médicales est nécessaire ?
+            if (isset($data['policy']) && $data['policy'] == 0) {
+                $errors['policy'] = get_string('required');
+            }
+
+            // L'adhésion à la fédération est obligatoire ?
+            if ($federationrequirement === APSOLU_FEDERATION_REQUIREMENT_TRUE && $data['federation'] == 0) {
+                $errors['federation'] = get_string('required');
+            }
+        }
+
+        return $errors;
     }
 }

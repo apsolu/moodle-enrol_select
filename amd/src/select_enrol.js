@@ -108,25 +108,6 @@ define(['jquery', 'core/notification', 'core/url', 'core/str', 'local_apsolu/sor
 
     };
 
-    /**
-     * Ajoute un message d'erreur dans un bandeau et positionne le scroll sur la notification.
-     *
-     * @param {string} message
-     * @return {void}
-     */
-    var addErrorNotification = function(message) {
-        Notification.addNotification({
-            message: message,
-            type: 'error'
-        });
-        var $notifRegion = $('#user-notifications').first();
-        if ($notifRegion.length) {
-            $('html, body').animate({
-                scrollTop: 200 // Scroll en haut de la page pour afficher les notifications.
-            }, 300);
-        }
-    };
-
     return {
         initialise: function(wwwroot, options = {}) {
             // Ajoute une div pour accueil les différents formulaires en overlay...
@@ -259,21 +240,24 @@ define(['jquery', 'core/notification', 'core/url', 'core/str', 'local_apsolu/sor
                 // Affiche le formulaire.
                 $.ajax({
                     url: wwwroot + '/enrol/select/ajax/enrol.php',
-                    data: { enrolid: $(this).data('enrolid'), ajax: 1},
+                    data: { enrolid: $(this).data('enrolid'), ajax: true},
                     type: 'GET',
                     dataType: 'html'
                 })
                 .done(function(result) {
-                    var data = JSON.parse(result);
-                    if(data.success) {
-                        $('#apsolu-enrol-form').html(data.html);
-                        set_edit_actions();
-                        set_cancel_actions();
-                        set_policy_actions();
+                    try {
+                        var data = JSON.parse(result);
 
-                        $('#apsolu-enrol-form').popup('show');
-                    } else {
-                        addErrorNotification(data.error);
+                        if(data.error) {
+                            Notification.exception(new Error(data.error));
+                        } else {
+                            // Affichage du résultat.
+                            $('#apsolu-enrol-form').html(data.html);
+                            $('#apsolu-enrol-form').popup('show');
+                        }
+
+                    } catch (e) {
+                        Notification.exception(e);
                     }
                 })
                 .fail(function() {
@@ -284,117 +268,80 @@ define(['jquery', 'core/notification', 'core/url', 'core/str', 'local_apsolu/sor
                 return false;
             });
 
-            /**
-             * Fonction appelée lorsqu'on clique sur le bouton "s'inscrire/se désinscrire"...
-             */
-            function set_edit_actions() {
-                $('#apsolu-enrol-form #id_enrolbutton, #apsolu-enrol-form #id_unenrolbutton, #apsolu-enrol-form #id_editenrol').
-                click(function(event) {
-                    event.preventDefault();
+            // Bouton pour fermer la modal après inscription ou tentative d'inscription : ne doit pas recharger pas la page.
+            $('#apsolu-enrol-form').on('click', '.apsolu-cancel-a', function(event) {
+                event.preventDefault();
+                $('#apsolu-enrol-form').popup('hide');
+                $('#apsolu-enrol-form').children().remove();
+            });
 
-                    var role = $('#apsolu-enrol-form form select[name=role] option:selected').val();
-                    if (role == undefined) {
-                        role = $('#apsolu-enrol-form form input[name=role]').val();
-                    }
-                    var enrolid = $('#apsolu-enrol-form form input[name=enrolid]').val();
-                    var sesskey = $('#apsolu-enrol-form form input[name=sesskey]').val();
+            // Lorsqu'on clique dans le formulaire sur le bouton "s'inscrire/se désinscrire/modifier son inscription".
+            $('#apsolu-enrol-form').on('click', '#id_enrolbutton, #id_unenrolbutton, #id_editenrol', function(event) {
+                event.preventDefault();
 
-                    var actions;
-                    if ($(this).attr('id') == 'id_unenrolbutton') {
-                        actions = {_qf__enrol_select_form: 1, sesskey: sesskey, enrolid: enrolid, unenrolbutton: 1, ajax: 1};
-                    } else if ($(this).attr('id') == 'id_editenrol') {
-                        actions = {_qf__enrol_select_form: 1, sesskey: sesskey, enrolid: enrolid, editenrol: 1, policy: 0, ajax: 1};
-                    } else {
-                        var fullname = $('#apsolu-enrol-form form input[name=fullname]').val();
-                        actions = {
-                                fullname: fullname,
-                                enrolid: enrolid,
-                                role: role,
-                                enrolbutton: 1,
-                                _qf__enrol_select_form: 1,
-                                sesskey: sesskey,
-                                policy: 0,
-                                ajax: 1
-                            };
+                var enrolid = $('#apsolu-enrol-form form input[name=enrolid]').val();
+                var sesskey = $('#apsolu-enrol-form form input[name=sesskey]').val();
 
-                        var federation = $('#apsolu-enrol-form form select[name=federation] option:selected').val();
-                        if (federation) {
-                           actions.federation = federation;
-                        }
-                    }
+                var actions = {
+                    _qf__enrol_select_form: 1,
+                    enrolid: enrolid,
+                    sesskey: sesskey,
+                    ajax: true
+                };
+                if ($(this).attr('id') == 'id_unenrolbutton') {
+                    actions.unenrolbutton = 1;
+                } else if ($(this).attr('id') == 'id_editenrol') {
+                    actions.editenrol = 1;
+                } else {
+                    actions.role = $('#apsolu-enrol-form form select[name=role] option:selected').val();
+                    actions.federation = $('#apsolu-enrol-form form input[name=federation]').is(':checked') ? 1 : 0;
+                    actions.enrolbutton = 1;
+                    actions.policy = $('#apsolu-enrol-form form input[name=policy]').is(':checked') ? 1 : 0;
+                }
 
-                    $.ajax({
-                        url: wwwroot + "/enrol/select/ajax/enrol.php",
-                        type: 'POST',
-                        data: actions,
-                        dataType: 'html'
-                    })
-                    .done(function(result) {
+                $.ajax({
+                    url: wwwroot + "/enrol/select/ajax/enrol.php",
+                    type: 'POST',
+                    data: actions,
+                    dataType: 'html'
+                })
+                .done(function(result) {
+                    try {
                         var data = JSON.parse(result);
-                        if(data.success) {
+
+                        if(data.error) {
+                            Notification.exception(new Error(data.error));
+                        } else {
                             $('#apsolu-enrol-form').html(data.html);
-                            set_edit_actions();
-                            set_cancel_actions();
-                            set_policy_actions();
-                            // Ne pas charger les modifications de l'ui lors du clic sur 'modifier son inscription'.
-                            if(!actions.editenrol) {
+
+                            // Rafraîchir les informations relatives au créneau (nombre de places, inscription...) après traitement.
+                            if(data.success == true && !actions.editenrol) {
                                 reload_ui(enrolid, data.unenrol);
                             }
-                        } else {
-                            addErrorNotification(data.error);
-                            $('#apsolu-enrol-form').popup('hide');
                         }
-                    })
-                    .fail(function() {
-                        Notification.exception(new Error('Echec de l’appel à la ressource serveur.'));
-                    });
-                    // .always(function() {
 
-                    // });
+                    } catch (e) {
+                        Notification.exception(e);
+                        $('#apsolu-enrol-form').popup('hide');
+                    }
 
-                    return false;
-                });
-            }
-
-            /**
-             * Fonction appelée pour définir les actions sur le bouton d'annulation.
-             */
-            function set_cancel_actions() {
-                // Lorsqu'on clique sur le bouton "annuler"...
-                $('.apsolu-cancel-a').click(function(event) {
-                    event.preventDefault();
-
+                })
+                .fail(function() {
+                    Notification.exception(new Error('Echec de l’appel à la ressource serveur.'));
                     $('#apsolu-enrol-form').popup('hide');
                 });
-            }
+                // .always(function() {
 
-            /**
-             * Fonction appelée pour désactiver le bouton d'inscription si la case des recommandations médicales n'est pas cochée.
-             */
-            function set_policy_actions() {
-                var policy = $('#apsolu-enrol-form form input[name=policy]');
+                // });
 
-                // Si la validation des recommandations médicales sont activées.
-                if (policy.length) {
-                    // Désactive le bouton d'inscription.
-                    $('#apsolu-enrol-form form input[name=enrolbutton]').prop('disabled', true);
-
-                    // Active/désactive le bouton d'inscription lorsqu'on coche/décoche la case des recommandations médicales.
-                    policy.change(function() {
-                        if ($(this).is(':checked')) {
-                            $('#apsolu-enrol-form form input[name=enrolbutton]').prop('disabled', false);
-                        } else {
-                            $('#apsolu-enrol-form form input[name=enrolbutton]').prop('disabled', true);
-                        }
-                    });
-                }
-            }
+                return false;
+            });
 
             /**
              * Fonction appelée pour recharger l'interace graphique.
              *
              * @param {string} enrolid Identifiant numérique de la méthode d'inscription.
-             * @param {bool} unenrol si l'utilisateur doit être désinscrit ou inscrit.
+             * @param {bool} unenrol si l'utilisateur doit être désinscrit (true) ou inscrit (false).
              */
             function reload_ui(enrolid, unenrol) {
                 // TODO: modifier l'icone edit/add
@@ -422,6 +369,7 @@ define(['jquery', 'core/notification', 'core/url', 'core/str', 'local_apsolu/sor
                     .closest('.apsolu-sports-tr-course').toggleClass('info', !unenrol);
             }
 
+            // Initialisation de la table avec tablesorter (ajout des filtres notamment).
             SortTable.initialise(options);
         }
     };

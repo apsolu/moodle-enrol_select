@@ -250,6 +250,7 @@ $string['renewals'] = 'Réinscriptions en masse';
 $string['lists'] = 'Gestion des listes';
 
 $string['error:enrol'] = 'Impossible de vous inscrire à ce cours';
+$string['error_unchanged_role'] = 'Type d’inscription non modifié';
 
 $string['enrolment'] = 'Inscription';
 $string['enrolments'] = 'Inscriptions';
