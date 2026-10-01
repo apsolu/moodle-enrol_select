@@ -138,8 +138,6 @@ class overview implements renderable, templatable {
                 $data->course_formats[$formatindex]->activities[$category->id]->courses[$course->id] = $course;
             }
 
-            $data->course_formats[$formatindex]->count_courses = count($courses);
-
             if ($currentactivityid === null) {
                 // Aucun cours n'était présent pour ce format de cours.
                 unset($data->course_formats[$formatindex]);
