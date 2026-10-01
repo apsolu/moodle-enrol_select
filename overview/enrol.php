@@ -377,11 +377,13 @@ if (!isset($edit) && $data = $mform->get_data()) {
                 $params = ['deadline' => format_time($instance->customdec1), 'contact' => $functionalcontact];
                 $enrolment->paymentmessage = get_string('payment_deadline_warning', 'enrol_select', $params);
 
-                if (empty($course->information) === false) {
+                if (isset($course->customfields['information']) === true) {
+                    $information = $course->customfields['information']->export_value();
+
                     // Affiche une information complémentaire.
                     $context = context_course::instance($course->id);
                     $enrolment->courseinformation = file_rewrite_pluginfile_urls(
-                        $course->information,
+                        $information,
                         'pluginfile.php',
                         $context->id,
                         'local_apsolu',
