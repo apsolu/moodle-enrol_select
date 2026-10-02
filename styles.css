@@ -423,15 +423,6 @@ input[type="radio"][name^="renew"] {
         width: 5% !important; /* stylelint-disable-line declaration-no-important */
     }
 
-    .td-icon {
-        cursor: help;
-
-        & img {
-            width: 24px;
-            height: 20px;
-        }
-    }
-
     .edit_rule {
         cursor: pointer;
         & .fa-gear {
@@ -442,6 +433,17 @@ input[type="radio"][name^="renew"] {
     .edit_rule:hover {
         text-decoration-line: underline;
         filter: brightness(1.4);
+    }
+
+    .tooltip.collegerule-tooltip {
+        --bs-tooltip-bg: var(--apsolu-color-custom-3);
+        --bs-tooltip-color: var(--apsolu-color-light);
+        --bs-tooltip-font-size: 0.75rem;
+        --bs-tooltip-max-width: 230px;
+        --bs-tooltip-padding-x: 10px;
+        --bs-tooltip-padding-y: 4px;
+        --bs-tooltip-border-radius: .5rem;
+        --bs-tooltip-opacity: 1;
     }
 
     #modal-college-programmation {

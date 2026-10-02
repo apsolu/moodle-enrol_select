@@ -94,7 +94,12 @@
     <tr>
         <td>{{ name }}</td>
         <td>{{ rolename }}</td>
-        {{#count_rules}}<td class="td-icon" title="{{{daterule}}}"">{{#hasrule}}<span>{{#pix}}i/timer,core{{/pix}}</span>{{dateruledate}}{{/hasrule}}</td>{{/count_rules}}
+        {{#count_rules}}<td>
+        {{#hasrule}}
+        <a href="#{{dateruledate}}" class="apsolu-daterule" title="{{{daterule}}}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="collegerule-tooltip">
+        <i class="icon fa fa-clock-rotate-left fa-fw"></i>{{#userdate}}{{dateruledate}}, {{#str}}strftimeabbrday, local_apsolu{{/str}}{{/userdate}}</a>
+        {{/hasrule}}
+        </td>{{/count_rules}}
         <td>{{ maxwish }}</td>
         <td>{{ minregister }}</td>
         <td>{{ maxregister }}</td>
@@ -114,10 +119,10 @@
     {{#college_rules}}
     <details class="alert alert-custom-3 college-rules">
         {{#isfirst}}
-            <summary>{{#str}}next_changes, enrol_select{{/str}} : <strong>{{date}}</strong></summary>
+            <summary id={{id}}>{{#str}}next_changes, enrol_select{{/str}} : <strong>{{date}}</strong></summary>
         {{/isfirst}}
         {{^isfirst}}
-            <summary>{{#str}}other_planned_changes, enrol_select{{/str}} : <strong>{{date}}</strong></summary>
+            <summary id={{id}}>{{#str}}other_planned_changes, enrol_select{{/str}} : <strong>{{date}}</strong></summary>
         {{/isfirst}}
         {{> enrol_select/administration_college_rule }}
     </details>

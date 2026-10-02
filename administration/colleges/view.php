@@ -74,6 +74,7 @@ foreach ($tasks as $date => $rules) {
 
     $daterule->collegelist = $collegelist;
     $daterule->isfirst = $countrules == 0;
+    $daterule->id = $collegevalidities[$id];
 
     $collegerules[] = $daterule;
 
@@ -112,7 +113,7 @@ foreach ($colleges as $college) {
             'enrol_select',
             userdate($collegevalidities[$college->id], get_string('strftimedatetime', 'local_apsolu'))
         );
-        $college->dateruledate = userdate($collegevalidities[$college->id], get_string('strftimeabbrday', 'local_apsolu'));
+        $college->dateruledate = $collegevalidities[$college->id];
     }
 }
 
