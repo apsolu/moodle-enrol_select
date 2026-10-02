@@ -188,7 +188,7 @@ $output = $PAGE->get_renderer('enrol_select');
 // Bandeau alert personnalisé.
 $headeractive = get_config('local_apsolu', 'apsoluoverviewheaderactive');
 
-if ($headeractive !== false) {
+if ($headeractive) {
     $headerdata = new StdClass();
 
     $headerdata->headercontent = get_config('local_apsolu', 'apsoluoverviewheadercontent');
