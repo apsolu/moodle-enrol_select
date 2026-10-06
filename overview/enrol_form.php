@@ -113,6 +113,14 @@ class enrol_select_form extends moodleform {
                 $mform->setType('policy', PARAM_INT);
                 $mform->setDefault('policy', 0);
             }
+        } else {
+            // Utilisateur déjà inscrit : on affiche aussi la liste (statut) d'inscription.
+            $status = html_writer::tag('div', ucfirst(get_enrol_list_fieldvalue($instance->status, 'listname', false, true)));
+            $statuslabel = get_string('enrol_status', 'enrol_select');
+
+            $statusarr[] = &$mform->createElement('html', $status);
+
+            $mform->addGroup($statusarr, 'statusarr', $statuslabel, [' '], false, ['class' => 'form-readonly mb-4']);
         }
 
         // Submit buttons.
