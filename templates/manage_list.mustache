@@ -42,20 +42,27 @@
         * lastname Nom de l'utilisateur.
         * firstname Prénom de l'utilisateur.
         * role Identifiant du rôle de l'utilisateur.
-        * institution Nom de l'institution de l'étudiant.
-        * apsolucycle Cycle d'étude de l'utilisateur.
-        * department Nom du département d'étude de l'utilisateur.
-        * count_enrolments Nombre d'inscription de l'utilisateur.
-        * enrolments
+        * extrafields Champs custom de l'utilisateur.
+        * checkbox Case à cocher permettant de sélectionner l'utilisateur.
+        * timecreated Date d'inscription.
+        * timecreated_sortable Horaire de l'inscription dans un format triable alphabétiquement.
+        * datecreated_sortable Date d'inscription dans un format triable alphabétiquement.
+        * count_accepted_enrolments Nombre d'inscriptions de l'utilisateur avec le statut "accepté".
+        * accepted_enrolments
             * fullname Nom complet du cours.
             * sport Nom de la pratique sportive.
             * course_url URL du cours.
             * enrolname Nom de la méthode d'inscription.
             * state État de l'inscription.
-            * checkbox Case à cocher permettant de sélectionner l'utilisateur.
             * role Rôle pris dans l'inscription.
-            * timecreated Date d'inscription.
-            * timecreated_sortable Date d'inscription dans un format triable alphabétiquement.
+        * count_other_enrolments Nombre d'inscriptions de l'utilisateur avec un statut autre que "accepté".
+        * other_enrolments
+            * fullname Nom complet du cours.
+            * sport Nom de la pratique sportive.
+            * course_url URL du cours.
+            * enrolname Nom de la méthode d'inscription.
+            * state État de l'inscription.
+            * role Rôle pris dans l'inscription.
 
     Example context (json):
     {
@@ -76,22 +83,29 @@
                 "lastname": "apsolu",
                 "firstname": "bob",
                 "role": "5",
-                "institution": "Université",
-                "apsolucycle": "L1",
-                "department": "Anglais",
+                "extrafields": "",
+                "checkbox": "",
+                "timecreated": "Lundi 18 mai à 12h05",
+                "datecreated_sortable": "2020-05-18",
+                "timecreated_sortable": "12:05:47"
                 "count_accepted_enrolments": 1,
-                "enrolments": [
+                "accepted_enrolments": [
                     {
                         "fullname": "Tennis mardi 18h00",
                         "sport": "Tennis",
                         "course_url": "https://apsolu.fr/course",
                         "enrolname": "S1",
-                        "state": "L.C.",
-                        "checkbox": "",
-                        "role": "Évalué (bonification)",
-                        "timecreated": "Lundi 18 mai à 12h05",
-                        "datecreated_sortable": "2020-05-18",
-                        "timecreated_sortable": "12:05:47"
+                        "role": "Évalué (bonification)"
+                    }
+                ],
+                "count_other_enrolments": 1,
+                "other_enrolments": [
+                    {
+                        "fullname": "Tennis mardi 18h00",
+                        "sport": "Tennis",
+                        "course_url": "https://apsolu.fr/course",
+                        "enrolname": "S1",
+                        "role": "Évalué (bonification)"
                     }
                 ]
             }
