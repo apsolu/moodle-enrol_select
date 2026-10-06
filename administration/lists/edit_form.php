@@ -45,11 +45,11 @@ class enrol_select_lists_form extends moodleform {
         ));
 
         // L'étiquette du champ est sous-titrée par l'affichage de la valeur par défaut.
-        $label = get_custom_label('edit_status', $defaults['status']);
+        $label = get_custom_label('enrol_status', $defaults['status']);
         $mform->addElement('text', 'status', $label);
-        $mform->addHelpButton('status', 'edit_status', 'enrol_select', '', false, get_string('status_strexample', 'enrol_select'));
+        $mform->addHelpButton('status', 'enrol_status', 'enrol_select', '', false, get_string('status_strexample', 'enrol_select'));
 
-        $label = get_custom_label('edit_statusshort', $defaults['statusshort']);
+        $label = get_custom_label('enrol_statusshort', $defaults['statusshort']);
         $mform->addElement('text', 'statusshort', $label);
 
         $label = get_custom_label('edit_listname', $defaults['listname']);

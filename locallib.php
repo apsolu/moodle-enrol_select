@@ -466,49 +466,45 @@ function enrol_select_get_count_user_role_assignments($userid = null) {
  * Renvoie tous les rôles auxquels un utilisateur peut prétendre.
  *
  * @param int|null $userid   Identifiant d'un utilisateur. Si NULL, on prend l'id de l'utilisateur courant.
- * @param int|null $courseid Identifiant d'un cours. Si NULL, on prend tous les rôles possibles.
  *
  * @return array Un tableau contenant la liste des rôles auxquels un utilisateur peut prétendre.
  */
-function enrol_select_get_potential_user_roles($userid = null, $courseid = null) {
+function enrol_select_get_potential_user_roles($userid = null) {
     global $DB, $USER;
 
     if ($userid === null) {
         $userid = $USER->id;
     }
 
-    if ($courseid === null) {
-        $sql = "SELECT DISTINCT r.*
-                  FROM {role} r
-                  JOIN {apsolu_colleges} ac ON r.id = ac.roleid
-                  JOIN {apsolu_colleges_members} acm ON ac.id = acm.collegeid
-                  JOIN {cohort_members} cm ON cm.cohortid = acm.cohortid
-                 WHERE cm.userid = :userid
-              ORDER BY r.sortorder";
-        $params = ['userid' => $userid];
-    } else {
-        $time = time() - date('s'); // Calcule l'heure sans les secondes (HH:MM:00) pour bénéficier du cache SQL.
-
-        $sql = "SELECT r.*
-                  FROM {role} r
-                  JOIN {role_assignments} ra ON r.id = ra.roleid
-                  JOIN {context} ctx ON ctx.id = ra.contextid
-                  JOIN {course} c ON c.id = ctx.instanceid
-                  JOIN {enrol} e ON c.id = e.courseid AND ra.itemid = e.id
-                  JOIN {user_enrolments} ue ON e.id = ue.enrolid AND ue.userid = ra.userid
-                 WHERE e.enrol = 'select'
-                   AND e.status = 0
-                   AND ue.userid = :userid
-                   AND (ue.timeend = 0 OR ue.timeend >= :timeend)
-                   AND c.id = :courseid
-                   AND ctx.contextlevel = 50
-              ORDER BY r.sortorder";
-        $params = ['userid' => $userid, 'timeend' => $time, 'courseid' => $courseid];
-    }
+    $sql = "SELECT DISTINCT r.*
+                FROM {role} r
+                JOIN {apsolu_colleges} ac ON r.id = ac.roleid
+                JOIN {apsolu_colleges_members} acm ON ac.id = acm.collegeid
+                JOIN {cohort_members} cm ON cm.cohortid = acm.cohortid
+                WHERE cm.userid = :userid
+            ORDER BY r.sortorder";
+    $params = ['userid' => $userid];
 
     $roles = role_fix_names($DB->get_records_sql($sql, $params));
 
     return $roles;
+}
+
+/**
+ * Retourne la liste d'inscription actuelle de l'utilisateur.
+ *
+ * @param object $instance Objet représentant l'instance de la méthode d'inscription.
+ * @param object $user Objet représentant l'utilisateur.
+ *
+ * @return string|false Retourne le code de la liste, false si l'étudiant n'est pas inscrit.
+ */
+function enrol_select_get_user_enrolment_status($instance, $user) {
+    global $DB;
+    $userenrolment = $DB->get_record('user_enrolments', ['enrolid' => $instance->id, 'userid' => $user->id]);
+    if ($userenrolment !== false) {
+        return $userenrolment->status;
+    }
+    return false; // Utilisateur non inscrit.
 }
 
 /**

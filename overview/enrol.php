@@ -75,6 +75,12 @@ $PAGE->set_context($context);
 
 $enrol = $DB->get_record('enrol', ['enrol' => 'select', 'status' => 0, 'id' => $enrolid], '*', MUST_EXIST);
 
+// Vérifier que la méthode d'inscription correspond bien à la période en cours.
+$now = time() - date('s');
+if (($enrol->enrolenddate != 0 && $enrol->enrolenddate < $now) || $enrol->enrolstartdate > $now) {
+    throw new moodle_exception('outofdateenrolment', 'enrol_select');
+}
+
 $federation = new FederationCourse();
 $federationcourseid = $federation->get_courseid();
 
@@ -98,13 +104,6 @@ if (isset($course->customfields['location']) === true) {
     }
 }
 
-// Détermine si l'utilisateur courant est déjà inscrit à ce cours.
-// TODO: à modifer...
-$instance->role = '';
-foreach (enrol_select_get_potential_user_roles($userid = null, $enrol->courseid) as $role) {
-    $instance->role = $role->id;
-}
-
 $federations = [];
 $federationrequirement = APSOLU_FEDERATION_REQUIREMENT_FALSE;
 
@@ -117,13 +116,29 @@ if (!$ajax) {
 $result = new stdClass();
 $result->wwwroot = $CFG->wwwroot;
 
-
-// Vérifie que le cours est ouvert à cet utilisateur.
-// TODO: vérifier que les inscriptions sont en cours...
-
-// L'utilisateur n'est pas inscrit à ce cours...
+// Récupère les données sur l'inscription actuelle ou potentielle.
 $enrolselectplugin = new enrol_select_plugin();
-if ($instance->role === '') {
+
+// Détermine si l'utilisateur courant est déjà inscrit à ce cours pour la période actuelle.
+$isuserenroled = false;
+$instance->role = $enrolselectplugin->get_user_role($enrol, $USER->id, true);
+// On récupère la liste d'inscription.
+$instance->status = enrol_select_get_user_enrolment_status($enrol, $USER);
+if (empty($instance->role) === false && $instance->status !== false) {
+    $isuserenroled = true;
+    $instance->role = $instance->role->id;
+    // Utilisateur déjà inscrit :
+    // On récupère la liste des rôles auxquels il peut encore prétendre sur ce cours.
+    $roles = $enrolselectplugin->get_available_user_roles($enrol, $USER->id);
+    foreach ($roles as $roleid => $role) {
+        if ($enrolselectplugin->can_enrol($enrol, $USER, $roleid) === false && $roleid != $instance->role) {
+            unset($roles[$roleid]);
+            continue;
+        }
+
+        $roles[$roleid] = $role->localname;
+    }
+} else { // Si l'utilisateur n'est pas inscrit : vérifier que le cours est ouvert à cet utilisateur.
     // Est-ce que le cours est plein ?
     if ($enrolselectplugin->get_available_status($enrol, $USER) !== false) {
         // Est-ce que l'utilisateur n'a pas dépassé son quota de voeux...
@@ -170,7 +185,7 @@ if ($instance->role === '') {
         }
 
         if (count($availableuserroles) === 0) {
-            if (empty($instance->role) === false) {
+            if ($isenroled) {
                 $role = $DB->get_record('role', ['id' => $instance->role]);
                 $errors = ['str' => 'error_reach_wishes_role_limit', 'plugin' => 'enrol_select', 'args' => $role->name];
             } else {
@@ -196,18 +211,6 @@ if ($instance->role === '') {
         // Affichage direct (hors modal).
         throw new moodle_exception($errors['str'], $errors['plugin'], $errors['args']);
     }
-} else {
-    // Si l'utilisateur est déjà inscrit à ce cours.
-    $roles = $enrolselectplugin->get_available_user_roles($enrol, $USER->id);
-
-    foreach ($roles as $roleid => $role) {
-        if ($enrolselectplugin->can_enrol($enrol, $USER, $roleid) === false && $roleid != $instance->role) {
-            unset($roles[$roleid]);
-            continue;
-        }
-
-        $roles[$roleid] = $role->localname;
-    }
 }
 
 // Détermine si il possible/obligatoire de s'inscrire à la FFSU.
@@ -226,7 +229,7 @@ if (isset($course->customfields['federation']) === true && $course->customfields
 }
 
 // Formulaire complet (étape finale) ou formulaire "intermédiaire" (premier clic de l'utilisateur déjà inscrit) ?
-$finalform = empty($instance->role) || isset($edit) || isset($submit);
+$finalform = !$isuserenroled || isset($edit) || isset($submit);
 
 // Build form.
 $customdata = [$instance, $federationrequirement, $roles, $finalform];

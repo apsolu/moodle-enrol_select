@@ -442,11 +442,9 @@ class enrol_select_plugin extends enrol_plugin {
             return self::get_default_enrolment_list($instance);
         }
 
-        // Détermine si l'utilisateur est déjà inscrit sur cette instance.
-        $userenrolment = $DB->get_record('user_enrolments', ['enrolid' => $instance->id, 'userid' => $user->id]);
-        if ($userenrolment !== false) {
-            // Retourne la liste d'inscription actuelle de l'utilisateur.
-            return $userenrolment->status;
+        // Si l'utilisateur est déjà inscrit on retourne la liste d'inscription actuelle.
+        if (($userstatus = enrol_select_get_user_enrolment_status($instance, $user)) !== false) {
+            return $userstatus;
         }
 
         // Détermine si il y a déjà des utilisateurs sur liste complémentaire.
@@ -560,17 +558,18 @@ class enrol_select_plugin extends enrol_plugin {
             $userid = $USER->id;
         }
 
-        $sql = "SELECT r.*" .
-            " FROM {role} r" .
-            " JOIN {role_assignments} ra ON r.id = ra.roleid" .
-            " JOIN {context} ctx ON ctx.id = ra.contextid" .
-            " JOIN {enrol} e ON ctx.instanceid = e.courseid AND e.id = ra.itemid" .
-            " JOIN {user_enrolments} ue ON e.id = ue.enrolid AND ue.userid = ra.userid" .
-            " WHERE e.id = :enrolid" .
-            " AND e.enrol = 'select'" .
-            " AND e.status = 0" . // Active.
-            " AND ue.userid = :userid" .
-            " AND ctx.contextlevel = 50";
+        $sql = "SELECT r.*
+            FROM {role} r
+            JOIN {role_assignments} ra ON r.id = ra.roleid
+            JOIN {context} ctx ON ctx.id = ra.contextid
+            JOIN {enrol} e ON ctx.instanceid = e.courseid AND e.id = ra.itemid
+            JOIN {user_enrolments} ue ON e.id = ue.enrolid AND ue.userid = ra.userid
+            WHERE e.id = :enrolid
+            AND e.enrol = 'select'
+            AND e.status = 0
+            AND ue.userid = :userid
+            AND ctx.contextlevel = 50";
+
         $params = ['enrolid' => $instance->id, 'userid' => $userid];
 
         $roles = role_fix_names($DB->get_records_sql($sql, $params));

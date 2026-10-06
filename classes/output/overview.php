@@ -327,7 +327,7 @@ class overview implements renderable, templatable {
             $course->left_places_str = $enrol->availability_status->left_places_str;
             $course->left_places_style = $enrol->availability_status->left_places_style;
             $course->allow_enrolment = ($enrol->availability_status->full_registration === false);
-            $course->enroled = isset(self::$cacheenrolments[$course->id]);
+            $course->enroled = isset(self::$cacheenrolments[$course->id]) && self::$cacheenrolments[$course->id]->enrolid == $enrol->id;
         }
     }
 
