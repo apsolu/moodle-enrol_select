@@ -16,8 +16,6 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-use html_writer;
-
 require_once($CFG->libdir . '/formslib.php');
 
 /**
@@ -170,7 +168,7 @@ class enrol_select_form extends moodleform {
         [$instance, $federationrequirement] = $this->_customdata;
 
         // Vérifications ignorées lors de la désinscription.
-        if ($data['unenrolbutton'] == false) {
+        if (empty($data['unenrolbutton']) == true) {
             // En cas de modification de l'inscription : forcer la valeur du rôle à changer. Cela permet d'éviter
             // les messages d'erreur pour les inscriptions réalisées sur un rôle dont le quota est dépassé.
             if (empty($instance->role) == false && $data['role'] == $instance->role) {
