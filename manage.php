@@ -280,6 +280,7 @@ $recordset->close();
 // On affecte chaque utilisateur dans le ou les méthodes d'inscription auxquelles il est inscrit.
 foreach ($users as $user) {
     $enrolments = $user->accepted_enrolments + $user->other_enrolments;
+    $user->count_enrolments = count($enrolments);
     $user->accepted_enrolments = array_values($user->accepted_enrolments);
     $user->other_enrolments = array_values($user->other_enrolments);
     foreach ($enrolments as $enrolid => $enrolment) {
@@ -344,6 +345,7 @@ $options['widgetOptions'] = ['stickyHeaders_filteredToTop' => true, 'stickyHeade
 $PAGE->requires->js_call_amd('local_apsolu/sort', 'initialise', [$options]);
 
 $PAGE->requires->js_call_amd('enrol_select/select_manage_user_selection', 'initialise', [$activeenrolid]);
+$PAGE->requires->js_call_amd('enrol_select/select_manage_show_user_enrolments', 'initialise', ['courseid' => (int) $course->id]);
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('manage_select_enrolments', 'enrol_select'));

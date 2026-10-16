@@ -1,0 +1,77 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template enrol_select/show_user_enrolments
+
+    Template Moodle pour afficher la modale d'informations additionnelles sur les inscriptions d'un utilisateur.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Context variables required for this template:
+    * wwwroot correspond à la valeur de la variable Moodle $CFG->wwwroot
+    
+    Example context (json):
+    {
+        "wwwroot": "https://apsolu.fr",
+
+    }
+}}
+
+{{#count_accepted_enrolments}}
+<div><p class="enrolmentslist mb-2"><span class="badge bg-custom">{{#pix}}e/tick, core {{/pix}}{{str_accepted_status}}</span></p>
+<ul>
+    {{#accepted_enrolments}}
+    <li>
+        {{#courseurl}}
+            <p class="my-0"><span><a href="{{courseurl}}">{{coursefullname}}</a></span></p>
+            <p class="ms-5 my-0"><span>{{enrolname}} - {{rolename}}</span>{{#editable}}<span><a href="{{enrolurl}}">{{#pix}}i/enrolusers, core {{/pix}}</a></span>{{/editable}}</p>
+        {{/courseurl}}
+
+        {{^courseurl}}
+            <p class="my-0 text-muted"><span>{{coursefullname}}</span><span><a href="" data-action="hide">{{#str}}current_page, enrol_select{{/str}}</a></span></p>
+            <p class="ms-5 my-0 text-muted"><span>{{enrolname}} - {{rolename}}</span></p>
+        {{/courseurl}}
+    </li>
+    {{/accepted_enrolments}}
+</ul>
+</div>
+{{/count_accepted_enrolments}}
+
+{{#count_other_enrolments}}
+<div><p class="enrolmentslist mb-2"><span class="badge bg-light text-muted">{{#pix}}i/taglist, local_apsolu{{/pix}}Autres inscriptions :</span></p>
+<ul>
+    {{#other_enrolments}}
+    <li>
+        {{#courseurl}}
+            <p class="my-0"><span><a href="{{courseurl}}">{{coursefullname}}</a></span></p>
+            <p class="ms-5 my-0"><span class="badge bg-{{statuslevel}}">{{status}}</span><span>{{enrolname}} - {{rolename}}</span>{{#editable}}<span><a href="{{enrolurl}}">{{#pix}}i/enrolusers, core {{/pix}}</a></span>{{/editable}}</p>
+        {{/courseurl}}
+
+        {{^courseurl}}
+            <p class="my-0"><span class="text-muted">{{coursefullname}}</span><span><a href="" data-action="hide">{{#str}}current_page, enrol_select{{/str}}</a></span></p>
+            <p class="ms-5 my-0 text-muted"><span class="badge bg-{{statuslevel}}">{{status}}</span><span>{{enrolname}} - {{rolename}}</span></p>
+        {{/courseurl}}
+       
+    </li>
+    {{/other_enrolments}}
+</ul>
+</div>
+{{/count_other_enrolments}}

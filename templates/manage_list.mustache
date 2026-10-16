@@ -127,18 +127,18 @@
             <table class="table table-striped table-sortable">
                 <thead>
                     <tr>
-                        <th class="filter-false sorter-false no-mask table-column-shrink"><!-- {{#str}}select, enrol_select{{/str}}-->
+                        <th class="filter-false sorter-false no-mask col-xs"><!-- {{#str}}select, enrol_select{{/str}}-->
                         {{^lock}}
                             {{{ mastercheckbox }}}
                         {{/lock}}
                         </th>
-                        <th class="filter-false sorter-false no-mask table-column-shrink"></th>
-                        <th class="no-mask">{{#str}}fullname, local_apsolu{{/str}}</th>
+                        <th class="filter-false sorter-false no-mask col-xs"></th>
+                        <th class="no-mask table-column-shrink">{{#str}}fullname, local_apsolu{{/str}}</th>
                         <th class="table-column-shrink" data-mask-name="register_type">{{#str}}register_type, enrol_select{{/str}}</th>
                         {{# extrafields }}
                         <th class="table-column-shrink" data-mask-name="{{ fieldname }}">{{ label }}</th>
                         {{/ extrafields }}
-                        <th data-mask-name="additional_information">{{#str}}additional_information, local_apsolu{{/str}}</th>
+                        <th class='table-column-shrink' data-mask-name="additional_information">{{#str}}additional_information, local_apsolu{{/str}}</th>
                         <th class="table-column-shrink" data-mask-name="register_date">{{#str}}register_date, enrol_select{{/str}}</th>
                     </tr>
                 </thead>
@@ -156,30 +156,31 @@
                         {{# extrafields }}
                         <td>{{{ . }}}</td>
                         {{/ extrafields }}
-                        <td>
-                            {{! Affiche toutes les inscriptions acceptées de l'étudiant. }}
-                            {{#count_accepted_enrolments}}
-                            <details>
-                                <summary>{{count_accepted_enrolments}}{{#customstr}}{{x_enrolments_on_status_accepted}}{{/customstr}}</summary>
-                                <ul class="list-unstyledx">
-                                    {{#accepted_enrolments}}
-                                    <li><abbr title="{{fullname}}">{{sport}}</abbr>{{#course_url}} <a href="{{course_url}}">{{#pix}}i/course, core, {{#str}}course{{/str}}{{/pix}}</a>{{/course_url}} ({{enrolname}}/{{role}})</li>
-                                    {{/accepted_enrolments}}
-                                </ul>
-                            </details>
-                            {{/count_accepted_enrolments}}
+                        {{! Informations additionnelles. }}
+                        <td class='infos'>
+                            {{! Inscriptions de l'étudiant. }}
+                            {{#count_enrolments}}
+                            <div class="d-flex gap-3 flex-row m" style="max-width:fit-content">
+                                <div class="d-flex flex-column">
+                                    {{! Affiche le nombre d'inscriptions acceptées de l'étudiant. }}
+                                    {{#count_accepted_enrolments}}
+                                        <p class="my-0">{{count_accepted_enrolments}}{{#customstr}}{{x_enrolments_on_status_accepted}}{{/customstr}}</p>
+                                    {{/count_accepted_enrolments}}
 
-                            {{! Affiche toutes les autres inscriptions de l'étudiant. }}
-                            {{#count_other_enrolments}}
-                            <details>
-                                <summary>{{#str}}x_other_enrolment_s, enrol_select, {{count_other_enrolments}}{{/str}}</summary>
-                                <ul class="list-unstyledx">
-                                    {{#other_enrolments}}
-                                    <li><abbr title="{{fullname}}">{{sport}}</abbr>{{#course_url}} <a href="{{course_url}}">{{#pix}}i/course, core, {{#str}}course{{/str}}{{/pix}}</a>{{/course_url}} ({{enrolname}}/{{state}}/{{role}})</li>
-                                    {{/other_enrolments}}
-                                </ul>
-                            </details>
-                            {{/count_other_enrolments}}
+                                    {{! Affiche le nombre de voeux (inscriptions non acceptées) de l'étudiant. }}
+                                    {{#count_other_enrolments}}
+                                        <p class="my-0">{{#str}}x_other_enrolment_s, enrol_select, {{count_other_enrolments}}{{/str}}</p>
+                                    {{/count_other_enrolments}}
+                                </div>
+                                {{! Bouton pour afficher la modale contenant le détail des inscriptions. }}
+                                <button type="button" class="btn btn-link p-0 userdetails"
+                                    data-action="enrol_select/show-user-enrolments"s
+                                    data-userid="{{id}}" data-title='{{#str}}user_enrolments, enrol_select, { "firstname": "{{firstname}}", "lastname": "{{lastname}}" } {{/str}}'
+                                    aria-label="{{#str}}see_all_enrolments, enrol_select {{/str}}">
+                                    {{#pix}}a/search, core{{/pix}}
+                                </button>
+                            </div>
+                            {{/count_enrolments}}
 
                             {{! Affiche l'état des paiements de l'étudiant pour ce cours. }}
                             {{#count_payments}}

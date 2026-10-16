@@ -315,6 +315,16 @@ input[type="radio"][name^="renew"] {
     margin-top: 1em;
 }
 
+#page-enrol-select-manage .infos {
+    & p {
+        font-weight: var(--bs-body-font-weight);
+    }
+}
+
+#page-enrol-select-manage th.col-xs {
+    width: 0.0001%; /* éviter que la colonne ne récupère un peu de l'excédent de largeur du tableau */
+}
+
 #page-enrol-select-edit form select[multiple='multiple'] {
     max-width: 500px;
 }
@@ -337,6 +347,27 @@ input[type="radio"][name^="renew"] {
 #page-enrol-select-manage_move textarea[disabled] {
     background-color: #eee;
     cursor: not-allowed;
+}
+
+.modal.user-enrolments-details div.modal-content {
+    & .enrolmentslist {
+        font-size: 1rem;
+    }
+    & ul {
+        list-style: none;
+    }
+
+    & li {
+        margin: 5px 0 15px 0;
+
+        & p span {
+            margin-left: 10px;
+        }
+    }
+
+    & a[data-action="hide"] {
+        color: var(--bs-dark);
+    }
 }
 
 #page-enrol-select-overview #id_unenrolbutton,
