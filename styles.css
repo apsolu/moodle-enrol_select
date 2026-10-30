@@ -350,23 +350,99 @@ input[type="radio"][name^="renew"] {
 }
 
 .modal.user-enrolments-details div.modal-content {
-    & .enrolmentslist {
-        font-size: 1rem;
-    }
-    & ul {
-        list-style: none;
-    }
-
-    & li {
-        margin: 5px 0 15px 0;
-
-        & p span {
-            margin-left: 10px;
-        }
-    }
 
     & a[data-action="hide"] {
         color: var(--bs-dark);
+    }
+
+    .ue-course-format-details {
+        --es-bg: var(--bs-secondary-bg-subtle);
+        --es-border: var(--bs-gray-300);
+        --es-text: var(--bs-secondary-text-emphasis);
+        --es-radius: var(--bs-border-radius, .375rem);
+
+        margin-bottom: 1rem;
+    }
+
+    .ue-course-format-details > summary {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        width: fit-content;
+        padding: .35rem .9rem;
+        list-style: none;
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--bs-secondary-color);
+        background: var(--bs-body-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: var(--es-radius);
+        transition: background-color .15s, color .15s, border-color .15s;
+        font-size: .975rem;
+    }
+
+    .ue-course-format-details > summary::-webkit-details-marker {
+        display: none; /* Chrome / Safari */
+    }
+
+    .ue-course-format-details > summary::before {
+        content: "";
+        width: .4rem;
+        height: .4rem;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(-45deg);
+        transition: transform .15s;
+    }
+
+    .ue-course-format-details > summary:hover {
+        color: var(--es-text);
+        border-color: var(--es-border);
+    }
+
+    .ue-course-format-details > summary:focus-visible {
+        outline: 2px solid var(--bs-primary);
+        outline-offset: 2px;
+    }
+
+    .ue-course-format-details[open] > summary {
+        position: relative;
+        z-index: 1;
+        margin-bottom: -1px;
+        color: var(--es-text);
+        background: var(--es-bg);
+        border-color: var(--es-border);
+        border-bottom-color: var(--es-bg);
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .ue-course-format-details[open] > summary::before {
+        transform: rotate(45deg);
+    }
+
+    .ue-course-format-details-content {
+        padding: .75rem 1rem;
+        background: var(--bs-body-bg);
+        border: 1px solid var(--es-border);
+        border-radius: 0 var(--es-radius) var(--es-radius) var(--es-radius);
+        box-shadow: 0 .25rem .75rem rgba(var(--bs-primary-rgb), .12);
+
+        & li {
+            margin: 5px 0 15px 0;
+
+            & p span {
+                margin-left: 10px;
+            }
+        }
+    }
+
+    .ue-course-ffsu {
+        margin-top: 1.25rem;
+        padding-top: .75rem;
+        padding-left: 1.5rem;
+        border-top: 1px solid var(--bs-border-color);
+        font-size: 16px;
     }
 }
 
@@ -424,10 +500,6 @@ input[type="radio"][name^="renew"] {
             margin-bottom: 1.5rem;
         }
 
-    }
-
-    .capitalize:first-letter {
-        text-transform: capitalize;
     }
 
     /* Interface de gestion de populations */
@@ -515,4 +587,8 @@ input[type="radio"][name^="renew"] {
         }
 
     }
+}
+
+.capitalize:first-letter {
+    text-transform: capitalize;
 }

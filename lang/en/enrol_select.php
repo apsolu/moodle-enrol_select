@@ -273,7 +273,7 @@ $string['full_registration'] = 'Inscription complète';
 // Gestion des voeux et des listes.
 $string['add_rule'] = 'Ajouter une règle';
 $string['create_new_college'] = 'Créer une nouvelle population';
-$string['current_page'] = '(page en cours)';
+$string['current_page'] = '(page actuelle)';
 $string['delete_ovewritten_college_rule_task'] = 'Une tâche adhoc a été supprimée car elle faisait doublon avec une autre (tâche de plannification des quotas d’inscription par population)';
 $string['delete_past_college_rule_task'] = 'Une tâche adhoc passée et non exécutée a été supprimée (tâche de plannification des quotas d’inscription par population)';
 $string['delete_rule'] = 'Souhaitez-vous supprimer la règle programmée ?';
