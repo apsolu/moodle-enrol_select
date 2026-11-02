@@ -36,6 +36,7 @@
     * mastercheckbox Case à cocher permettant de cocher ou décocher tous les utilisateurs.
     * actions Boutons HTML de validation du formulaire.
     * count_users Nombre d'utilisateurs.
+    * x_accepted_str Texte affichant le nombre d'inscriptions avec le statut "accepté".
     * users
         * id Identifiant de l'utilisateur.
         * picture Code HTML pour afficher l'avatar de l'utilisateur.
@@ -48,21 +49,7 @@
         * timecreated_sortable Horaire de l'inscription dans un format triable alphabétiquement.
         * datecreated_sortable Date d'inscription dans un format triable alphabétiquement.
         * count_accepted_enrolments Nombre d'inscriptions de l'utilisateur avec le statut "accepté".
-        * accepted_enrolments
-            * fullname Nom complet du cours.
-            * sport Nom de la pratique sportive.
-            * course_url URL du cours.
-            * enrolname Nom de la méthode d'inscription.
-            * state État de l'inscription.
-            * role Rôle pris dans l'inscription.
         * count_other_enrolments Nombre d'inscriptions de l'utilisateur avec un statut autre que "accepté".
-        * other_enrolments
-            * fullname Nom complet du cours.
-            * sport Nom de la pratique sportive.
-            * course_url URL du cours.
-            * enrolname Nom de la méthode d'inscription.
-            * state État de l'inscription.
-            * role Rôle pris dans l'inscription.
 
     Example context (json):
     {
@@ -76,6 +63,7 @@
         "lock": false,
         "actions": "<input type=\"submit\">",
         "count_users": 1,
+        "x_accepted_str": "4 inscription(s) avec le statut « accepté »",
         "users": [
             {
                 "id": "9",
@@ -87,27 +75,9 @@
                 "checkbox": "",
                 "timecreated": "Lundi 18 mai à 12h05",
                 "datecreated_sortable": "2020-05-18",
-                "timecreated_sortable": "12:05:47"
+                "timecreated_sortable": "12:05:47",
                 "count_accepted_enrolments": 1,
-                "accepted_enrolments": [
-                    {
-                        "fullname": "Tennis mardi 18h00",
-                        "sport": "Tennis",
-                        "course_url": "https://apsolu.fr/course",
-                        "enrolname": "S1",
-                        "role": "Évalué (bonification)"
-                    }
-                ],
-                "count_other_enrolments": 1,
-                "other_enrolments": [
-                    {
-                        "fullname": "Tennis mardi 18h00",
-                        "sport": "Tennis",
-                        "course_url": "https://apsolu.fr/course",
-                        "enrolname": "S1",
-                        "role": "Évalué (bonification)"
-                    }
-                ]
+                "count_other_enrolments": 1
             }
         ]
     }
@@ -164,7 +134,7 @@
                                 <div class="d-flex flex-column">
                                     {{! Affiche le nombre d'inscriptions acceptées de l'étudiant. }}
                                     {{#count_accepted_enrolments}}
-                                        <p class="my-0">{{count_accepted_enrolments}}{{#customstr}}{{x_enrolments_on_status_accepted}}{{/customstr}}</p>
+                                        <p class="my-0">{{count_accepted_enrolments}}{{x_accepted_str}}</p>
                                     {{/count_accepted_enrolments}}
 
                                     {{! Affiche le nombre de voeux (inscriptions non acceptées) de l'étudiant. }}
@@ -174,7 +144,7 @@
                                 </div>
                                 {{! Bouton pour afficher la modale contenant le détail des inscriptions. }}
                                 <button type="button" class="btn btn-link p-0 userdetails"
-                                    data-action="enrol_select/show-user-enrolments"s
+                                    data-action="enrol_select/show-user-enrolments"
                                     data-userid="{{id}}" data-title='{{#str}}user_enrolments, enrol_select, { "firstname": "{{firstname}}", "lastname": "{{lastname}}" } {{/str}}'
                                     aria-label="{{#str}}see_all_enrolments, enrol_select {{/str}}">
                                     {{#pix}}a/search, core{{/pix}}

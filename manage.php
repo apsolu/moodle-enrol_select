@@ -186,19 +186,13 @@ if ($activeenrolid === false) {
 $payments = Payment::get_users_cards_status_per_course($course->id);
 $paymentspix = Payment::get_statuses_images();
 
-// On récupère tous les types de calendriers.
-$calendartypes = $DB->get_records('apsolu_calendars_types');
-
 // On récupère toutes les inscriptions de tous les étudiants inscrits à ce cours.
-$sql = 'SELECT u.*, ra.roleid, e.name AS enrolname, e.courseid, ue.enrolid, ue.status, ue.timecreated,
-               c.fullname, cc.name AS sport, ac.typeid AS calendartypeid
+$sql = 'SELECT u.*, ra.roleid, e.courseid, ue.enrolid, ue.status, ue.timecreated
           FROM {user} u
           JOIN {user_enrolments} ue ON u.id = ue.userid
           JOIN {role_assignments} ra ON u.id = ra.userid AND ra.itemid = ue.enrolid
           JOIN {enrol} e ON e.id = ue.enrolid
-     LEFT JOIN {apsolu_calendars} ac ON ac.id = e.customchar1
           JOIN {course} c ON c.id = e.courseid
-          JOIN {course_categories} cc ON cc.id = c.category
          WHERE u.deleted = 0
            AND e.enrol = "select"
            AND e.status = 0
@@ -219,9 +213,8 @@ foreach ($recordset as $record) {
     if (isset($users[$record->id]) === false) {
         // On initialise le profile utilisateur (photo, inscriptions, etc).
         $record->picture = $OUTPUT->user_picture($record, ['size' => 30, 'courseid' => $course->id]);
-        $record->accepted_enrolments = [];
+        $record->course_enrolments = [];
         $record->count_accepted_enrolments = 0;
-        $record->other_enrolments = [];
         $record->count_other_enrolments = 0;
         $record->payments = [];
         $record->count_payments = 0;
@@ -245,49 +238,32 @@ foreach ($recordset as $record) {
         $users[$record->id] = $record;
     }
 
-    $enrolment = new stdClass();
-    $enrolment->fullname = $record->fullname;
-    $enrolment->sport = $record->sport;
-    $enrolment->role = $roles[$record->roleid]->name;
+    // Inscriptions au cours actuellement affiché.
+    if (isset($enrols[$record->enrolid])) {
+        $enrolment = new stdClass();
+        $enrolment->role = $roles[$record->roleid]->name;
+        $enrolment->status = $record->status;
+        $enrolment->timecreated = userdate($record->timecreated, '%a %d %b à %T');
+        $enrolment->datecreated_sortable = userdate($record->timecreated, '%F');
+        $enrolment->timecreated_sortable = userdate($record->timecreated, '%T');
 
-    if (isset($calendartypes[$record->calendartypeid]->shortname) === true) {
-        $enrolment->enrolname = $calendartypes[$record->calendartypeid]->shortname;
-    } else {
-        $enrolment->enrolname = $record->enrolname;
+        $users[$record->id]->course_enrolments[$record->enrolid] = $enrolment;
     }
 
-    $enrolment->state = get_enrol_list_fieldvalue($record->status, 'statusshort');
-    $enrolment->status = $record->status;
-    $enrolment->timecreated = userdate($record->timecreated, '%a %d %b à %T');
-    $enrolment->datecreated_sortable = userdate($record->timecreated, '%F');
-    $enrolment->timecreated_sortable = userdate($record->timecreated, '%T');
-    if ($canmanagepastenrolment === false) {
-        $enrolment->course_url = '';
-    } else {
-        $enrolment->course_url = new moodle_url('/course/view.php', ['id' => $record->courseid]);
-    }
-
-    if ($enrolment->status === enrol_select_plugin::ACCEPTED) {
-        $users[$record->id]->accepted_enrolments[$record->enrolid] = $enrolment;
+    // Affichage du nombre d'inscriptions total (tous les cours / semestres).
+    if ($record->status === enrol_select_plugin::ACCEPTED) {
         $users[$record->id]->count_accepted_enrolments++;
     } else {
-        $users[$record->id]->other_enrolments[$record->enrolid] = $enrolment;
         $users[$record->id]->count_other_enrolments++;
     }
 }
 $recordset->close();
 
-// On affecte chaque utilisateur dans le ou les méthodes d'inscription auxquelles il est inscrit.
+// On affecte chaque utilisateur dans la ou les méthodes d'inscription auxquelles il est inscrit.
 foreach ($users as $user) {
-    $enrolments = $user->accepted_enrolments + $user->other_enrolments;
-    $user->count_enrolments = count($enrolments);
-    $user->accepted_enrolments = array_values($user->accepted_enrolments);
-    $user->other_enrolments = array_values($user->other_enrolments);
-    foreach ($enrolments as $enrolid => $enrolment) {
-        if (isset($enrols[$enrolid]) === false) {
-            continue;
-        }
+    $user->count_enrolments = count($user->course_enrolments);
 
+    foreach ($user->course_enrolments as $enrolid => $enrolment) {
         // On stocke le rôle et la date d'inscription pour cet utilisateur.
         $togglegroup = 'enrol-' . $enrolid . '-status-' . $enrolment->status . '-togglegroup';
         $checkbox = new \core\output\checkbox_toggleall($togglegroup, $ismaster = false, [
@@ -318,14 +294,12 @@ foreach ($enrols as $enrolid => $enrol) {
 }
 
 $data->enrols = array_values($enrols);
-$customstr = new stdClass();
-$customstr->x_enrolments_on_status_accepted = get_string_on_list_x(
+$data->x_accepted_str = get_string_on_list_x(
     enrol_select_plugin::ACCEPTED,
     'x_enrolments_on_status_X',
     'status',
     'true'
 );
-$data->customstr = $customstr;
 $PAGE->set_url('/enrol/select/manage.php', ['enrolid' => $instance->id]);
 $PAGE->set_pagelayout('base');
 $PAGE->set_title(get_string('manage_select_enrolments', 'enrol_select'));

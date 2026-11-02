@@ -93,16 +93,14 @@ class user_enrolments_summary extends external_api {
         $federationcourse = new FederationCourse();
         $federationcourseid = $federationcourse->get_courseid();
 
-        $federationadhesion = ['ffsu_licence_number' => "", 'ffsu_licence_status' => ""];
         if (empty($federationcourseid) === false) {
             // Numéro FFSU.
             $useradhesion = $DB->get_record('apsolu_federation_adhesions', ['userid' => $userid]);
             // TODO: afficher les bonnes informations sur la licence FFSU : qu'est-ce qui fait qu'on considère une licence
             // comme "validée", est-ce qu"on affiche l'état du paiement, est-ce qu'on regarde dans la table mdl_user_enrolments ?
             if ($useradhesion !== false) {
-                $federationadhesion['ffsu_licence_number'] = $adhesion->federationnumber;
-                $federationadhesion['ffsu_licence_status'] = empty($adhesion->timelicensed) ?
-                    "licence non attribuée" : "licence validée";
+                $ffsulicencenumber = $useradhesion->federationnumber;
+                $ffsulicencestatus = empty($useradhesion->timelicensed) ? "licence non attribuée" : "licence validée";
             }
         }
 
@@ -119,12 +117,13 @@ class user_enrolments_summary extends external_api {
             $courses[$coursetype->id]['enrolments']['other_enrolments'] = [];
         }
         foreach ($recordset as $useractivity) {
-            // Un enrollement dans le cours FFSU peut remonter ici.
+            // Un enrolement dans le cours FFSU peut remonter ici.
             if ($useractivity->id === $federationcourseid) {
                 continue;
             }
             // Génère une erreur si le cours n'existe pas ou s'il n'est pas associé à un type de format d'activités.
             $enrolmentcourse = course::get_record(['id' => $useractivity->id], '*', MUST_EXIST);
+
             $context = \context_course::instance($enrolmentcourse->id, MUST_EXIST);
             $coursetypeid = $enrolmentcourse->customfields['type']->get('intvalue');
 
@@ -149,24 +148,24 @@ class user_enrolments_summary extends external_api {
             );
 
             $enrolment = [
-                'enrolurl' => $enrolurl->out(false),
                 'courseurl' => $courseurl,
                 'coursefullname' => $useractivity->fullname,
-                'enrolname' => $useractivity->enrolname,
                 'rolename' => $roles[$useractivity->roleid]->name,
-                // Affichage d'un lien pour accéder directement à la page de gestion des inscrits (selon autorisations).
-                'editable' => $canmanageenrolment && ($enrol->customint8 > time() || $canmanagepastenrolment),
+                'enrolname' => $useractivity->enrolname,
             ];
+
+            // Affichage d'un lien pour accéder directement à la page de gestion des inscrits (selon autorisations).
+            if ($canmanageenrolment && ($enrol->customint8 > time() || $canmanagepastenrolment)) {
+                $enrolment['enrolurl'] = $enrolurl->out(false);
+            }
 
             // Toutes les inscriptions pour ce format d'activités sont affichées (d'abord les inscriptions acceptées puis
             // les autres inscriptions).
             if ($useractivity->status == enrol_select_plugin::ACCEPTED) {
-                $acceptedenrolments[] = $enrolment;
                 $courses[$coursetypeid]['enrolments']['accepted_enrolments'][] = $enrolment;
             } else {
                 $enrolment['status'] = get_enrol_list_fieldvalue($useractivity->status, 'listname');
                 $enrolment['statuslevel'] = get_list_badge_color($useractivity->status);
-                $otherenrolments[] = $enrolment;
                 $courses[$coursetypeid]['enrolments']['other_enrolments'][] = $enrolment;
             }
         }
@@ -175,20 +174,17 @@ class user_enrolments_summary extends external_api {
 
         foreach ($courses as $typeid => $enrolments) {
             if (
-                empty($enrolments['enrolments']['accepted_enrolments']) == false ||
-                empty($enrolments['enrolments']['other_enrolments']) == false
+                empty($enrolments['enrolments']['accepted_enrolments']) &&
+                empty($enrolments['enrolments']['other_enrolments'])
             ) {
-                $courses[$typeid]['count_accepted_enrolments'] = count($enrolments['enrolments']['accepted_enrolments']);
-                $courses[$typeid]['count_other_enrolments'] = count($enrolments['enrolments']['other_enrolments']);
-            } else {
                 unset($courses[$typeid]);
             }
         }
 
         $result = [
             'coursetypes' => $courses,
-            'federation_adhesion' => $federationadhesion,
-            'str_accepted_status' => get_string_on_list_x(enrol_select_plugin::ACCEPTED, 'enrolments_on_listname_X'),
+            'federation_number' => $ffsulicencenumber,
+            'federation_status' => $ffsulicencestatus,
         ];
 
         return (object) $result;
@@ -205,27 +201,23 @@ class user_enrolments_summary extends external_api {
                 new external_single_structure([
                     'currenttype' => new external_value(PARAM_BOOL, 'is currently opened course type'),
                     'name' => new external_value(PARAM_TEXT, 'course type name'),
-                    'count_accepted_enrolments' => new external_value(PARAM_INT, 'user accepted enrolments number'),
-                    'count_other_enrolments' => new external_value(PARAM_INT, 'user not accepted enrolments number'),
                     'enrolments' => new external_single_structure([
                         'accepted_enrolments' => new external_multiple_structure(
                             new external_single_structure([
                                 'courseurl' => new external_value(PARAM_URL, 'course url'),
                                 'coursefullname' => new external_value(PARAM_TEXT, 'course name'),
-                                'enrolurl' => new external_value(PARAM_URL, 'course enrolments management url'),
+                                'enrolurl' => new external_value(PARAM_URL, 'course enrolments management url', VALUE_OPTIONAL),
                                 'enrolname' => new external_value(PARAM_TEXT, 'enrolment method'),
                                 'rolename' => new external_value(PARAM_TEXT, 'user enrolment role'),
-                                'editable' => new external_value(PARAM_BOOL, 'is user enrolment editable'),
-                            ]),
+                            ])
                         ),
                         'other_enrolments' => new external_multiple_structure(
                             new external_single_structure([
                                 'courseurl' => new external_value(PARAM_URL, 'course url'),
                                 'coursefullname' => new external_value(PARAM_TEXT, 'course name'),
-                                'enrolurl' => new external_value(PARAM_URL, 'course enrolments management url'),
+                                'enrolurl' => new external_value(PARAM_URL, 'course enrolments management url', VALUE_OPTIONAL),
                                 'enrolname' => new external_value(PARAM_TEXT, 'enrolment method'),
                                 'rolename' => new external_value(PARAM_TEXT, 'user enrolment role'),
-                                'editable' => new external_value(PARAM_BOOL, 'is user enrolment editable'),
                                 'status' => new external_value(PARAM_TEXT, 'user enrolment status'),
                                 'statuslevel' => new external_value(PARAM_TEXT, 'user enrolment status level'),
                             ])
@@ -233,11 +225,8 @@ class user_enrolments_summary extends external_api {
                     ]),
                 ]),
             ),
-            'federation_adhesion' => new external_single_structure([
-                'ffsu_licence_number' => new external_value(PARAM_TEXT, 'user federation licence number'),
-                'ffsu_licence_status' => new external_value(PARAM_TEXT, 'user federation licence status'),
-            ]),
-            'str_accepted_status' => new external_value(PARAM_TEXT, 'accepted list status name', VALUE_OPTIONAL),
+            'federation_number' => new external_value(PARAM_TEXT, 'user federation licence number'),
+            'federation_status' => new external_value(PARAM_TEXT, 'user federation licence status'),
         ]);
     }
 }

@@ -26,12 +26,53 @@
     * none
 
     Context variables required for this template:
-    * wwwroot correspond à la valeur de la variable Moodle $CFG->wwwroot
+    * coursetypes La liste des formats d'activités associés à des méthodes d'inscriptions par voeux.
+        * currenttype Indique si le cours actuellement affiché fait partie de ce format.
+        * name Intitulé du format d'activités.
+        * enrolments Liste des inscriptions de l'utilisateur correspondant à ce format.
+            * accepted_enrolments Liste des inscriptions avec le statut "accepté".
+                * courseurl Lien vers le cours correspondant à l'inscription (si différent du cours actuellement affiché).
+                * coursefullname Intitulé du cours correspondant à l'inscription.
+                * enrolname Nom de la méthode d'inscription (calendrier).
+                * rolename Type d'inscription (rôle).
+                * enrolurl Lien vers la page de gestion des inscrits de la méthode d'inscription (si l'utilisateur actuel a le droit de modifier cette liste).
+            * other_enrolments Liste des inscriptions avec un statut différent de "accepté".
+                * courseurl Lien vers le cours correspondant à l'inscription (si différent du cours actuellement affiché).
+                * coursefullname Intitulé du cours correspondant à l'inscription.
+                * statuslevel Nom du badge (couleur bs) associé au statut de l'inscription.
+                * status Statut de l'inscription.
+                * enrolname Nom de la méthode d'inscription (calendrier).
+                * rolename Type d'inscription (rôle).
+                * enrolurl Lien vers la page de gestion des inscrits de la méthode d'inscription (si l'utilisateur actuel a le droit de modifier cette liste).
+        * federation_number
+        * federation_status
     
     Example context (json):
     {
-        "wwwroot": "https://apsolu.fr",
-
+        "coursetypes": [
+            "currenttype": false,
+            "name": "cours",
+            "enrolments": [
+                "accepted_enrolments": [
+                    "courseurl": "https://apsolu.fr/apsolu/enrol/select/manage.php?enrolid=8#enrol-15",
+                    "coursefullname": "Basket-ball 3x3 (H) Jeudi 15:30 17:30 Expert",
+                    "enrolname": "S1",
+                    "rolename": "Libre",
+                    "enrolurl": "https://apsolu.fr/apsolu/course/view.php?id=8"
+                ],
+                "other_enrolments": [
+                    "courseurl": "https://apsolu.fr/apsolu/enrol/select/manage.php?enrolid=8#enrol-16",
+                    "coursefullname": "Basket-ball 3x3 (H) Jeudi 15:30 17:30 Expert",
+                    "statuslevel": "warning",
+                    "status": "liste complémentaire",
+                    "enrolname": "S2",
+                    "rolename": "Evalué",
+                    "enrolurl": ""
+                ]
+            ]
+        ],
+        "federation_number": "", 
+        "federation_status": ""
     }
 }}
 {{#coursetypes}}
@@ -45,16 +86,15 @@
     <details class="ue-course-format-details">
 {{/currenttype}}
 
-        <summary class='capitalize'>{{name}}</summary>
+        <summary class='text-capitalize'>{{name}}</summary>
 
         {{#enrolments}}
             <ul class="ue-course-format-details-content list-unstyled mb-0">
-            {{#count_accepted_enrolments}}
             {{#accepted_enrolments}}
                 <li>
                 {{#courseurl}}
                     <p class="my-0"><span><a href="{{courseurl}}">{{coursefullname}}</a></span></p>
-                    <p class="ms-5 my-0"><span class="badge bg-custom">{{#pix}}e/tick, core {{/pix}} accepté </span><span>{{enrolname}} - {{rolename}}</span>{{#editable}}<span><a href="{{enrolurl}}">{{#pix}}i/enrolusers, core {{/pix}}</a></span>{{/editable}}</p>
+                    <p class="ms-5 my-0"><span class="badge bg-custom">{{#pix}}e/tick, core {{/pix}} accepté </span><span>{{enrolname}} - {{rolename}}</span>{{#enrolurl}}<span><a href="{{enrolurl}}">{{#pix}}i/enrolusers, core {{/pix}}</a></span>{{/enrolurl}}</p>
                 {{/courseurl}}
 
                 {{^courseurl}}
@@ -63,36 +103,30 @@
                 {{/courseurl}}
                 </li>
             {{/accepted_enrolments}}
-            {{/count_accepted_enrolments}}
-            {{#count_other_enrolments}}
+
             {{#other_enrolments}}
                 <li>
                 {{#courseurl}}
                     <p class="my-0"><span><a href="{{courseurl}}">{{coursefullname}}</a></span></p>
-                    <p class="ms-5 my-0"><span class="badge bg-{{statuslevel}}">{{status}}</span><span>{{enrolname}} - {{rolename}}</span>{{#editable}}<span><a href="{{enrolurl}}">{{#pix}}i/enrolusers, core {{/pix}}</a></span>{{/editable}}</p>
+                    <p class="ms-5 my-0"><span class="badge bg-{{statuslevel}}">{{status}}</span><span>{{enrolname}} - {{rolename}}</span>{{#enrolurl}}<span><a href="{{enrolurl}}">{{#pix}}i/enrolusers, core {{/pix}}</a></span>{{/enrolurl}}</p>
                 {{/courseurl}}
 
                 {{^courseurl}}
                     <p class="my-0"><span class="text-muted">{{coursefullname}}</span><span><a href="" data-action="hide">{{#str}}current_page, enrol_select{{/str}}</a></span></p>
                     <p class="ms-5 my-0 text-muted"><span class="badge bg-{{statuslevel}}">{{status}}</span><span>{{enrolname}} - {{rolename}}</span></p>
-                {{/courseurl}}
-                
+                {{/courseurl}}         
                 </li>
             {{/other_enrolments}}
-            {{/count_other_enrolments}}
             </ul>
         {{/enrolments}}
-
 
     </details>
 {{/coursetypes}}
 
-{{#federation_adhesion}}
-{{#ffsu_licence_number}}
+{{#federation_number}}
 <div class="ue-course-ffsu">
     <p class="fw-semibold mb-1">{{#str}}membership_of_the_sports_association, local_apsolu{{/str}}</p>
-    <p class="mb-0 ms-3">{{#str}}federation_licenseid, local_apsolu{{/str}} : {{ffsu_licence_number}}</p>
-    <p class="mb-0 ms-3">{{#str}}license_number_status, local_apsolu{{/str}} : {{ffsu_licence_status}}</p>
- </div>
- {{/ffsu_licence_number}}
- {{/federation_adhesion}}
+    <p class="mb-0 ms-3">{{#str}}federation_licenseid, local_apsolu{{/str}} : {{federation_number}}</p>
+    <p class="mb-0 ms-3">{{#str}}license_number_status, local_apsolu{{/str}} : {{federation_status}}</p>
+</div>
+{{/federation_number}}
