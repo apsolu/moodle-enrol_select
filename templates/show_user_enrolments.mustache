@@ -44,32 +44,38 @@
                 * enrolname Nom de la méthode d'inscription (calendrier).
                 * rolename Type d'inscription (rôle).
                 * enrolurl Lien vers la page de gestion des inscrits de la méthode d'inscription (si l'utilisateur actuel a le droit de modifier cette liste).
-        * federation_number
-        * federation_status
+    * federation_number
+    * federation_status
     
     Example context (json):
     {
         "coursetypes": [
-            "currenttype": false,
-            "name": "cours",
-            "enrolments": [
-                "accepted_enrolments": [
-                    "courseurl": "https://apsolu.fr/apsolu/enrol/select/manage.php?enrolid=8#enrol-15",
-                    "coursefullname": "Basket-ball 3x3 (H) Jeudi 15:30 17:30 Expert",
-                    "enrolname": "S1",
-                    "rolename": "Libre",
-                    "enrolurl": "https://apsolu.fr/apsolu/course/view.php?id=8"
-                ],
-                "other_enrolments": [
-                    "courseurl": "https://apsolu.fr/apsolu/enrol/select/manage.php?enrolid=8#enrol-16",
-                    "coursefullname": "Basket-ball 3x3 (H) Jeudi 15:30 17:30 Expert",
-                    "statuslevel": "warning",
-                    "status": "liste complémentaire",
-                    "enrolname": "S2",
-                    "rolename": "Evalué",
-                    "enrolurl": ""
-                ]
-            ]
+            {
+                "currenttype": false,
+                "name": "cours",
+                "enrolments": {
+                    "accepted_enrolments": [
+                        {
+                            "courseurl": "https://apsolu.fr/apsolu/enrol/select/manage.php?enrolid=8#enrol-15",
+                            "coursefullname": "Basket-ball 3x3 (H) Jeudi 15:30 17:30 Expert",
+                            "enrolname": "S1",
+                            "rolename": "Libre",
+                            "enrolurl": "https://apsolu.fr/apsolu/course/view.php?id=8"
+                        }
+                    ],
+                    "other_enrolments": [
+                        {
+                            "courseurl": "https://apsolu.fr/apsolu/enrol/select/manage.php?enrolid=8#enrol-16",
+                            "coursefullname": "Basket-ball 3x3 (H) Jeudi 15:30 17:30 Expert",
+                            "statuslevel": "warning",
+                            "status": "liste complémentaire",
+                            "enrolname": "S2",
+                            "rolename": "Evalué",
+                            "enrolurl": ""
+                        }
+                    ]
+                }
+            }
         ],
         "federation_number": "", 
         "federation_status": ""
