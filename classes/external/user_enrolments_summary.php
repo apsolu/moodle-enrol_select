@@ -21,6 +21,7 @@ use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_multiple_structure;
 use core_external\external_value;
+use local_apsolu\core\federation\adhesion;
 use local_apsolu\core\course;
 use local_apsolu\core\federation\course as FederationCourse;
 use enrol_select_plugin;
@@ -96,11 +97,15 @@ class user_enrolments_summary extends external_api {
         if (empty($federationcourseid) === false) {
             // Numéro FFSU.
             $useradhesion = $DB->get_record('apsolu_federation_adhesions', ['userid' => $userid]);
-            // TODO: afficher les bonnes informations sur la licence FFSU : qu'est-ce qui fait qu'on considère une licence
-            // comme "validée", est-ce qu"on affiche l'état du paiement, est-ce qu'on regarde dans la table mdl_user_enrolments ?
-            if ($useradhesion !== false) {
-                $ffsulicencenumber = $useradhesion->federationnumber;
-                $ffsulicencestatus = empty($useradhesion->timelicensed) ? "licence non attribuée" : "licence validée";
+            $adhesion = new Adhesion();
+            $adhesion->load($useradhesion->id);
+            if (empty($adhesion->federationnumberrequestdate) === false || empty($adhesion->timelicensed) === false) {
+                $ffsulicencenumber = $adhesion->federationnumber;
+                if (empty($adhesion->timelicensed) === false) {
+                    $ffsulicencestatus = get_string('license_number_assigned', 'local_apsolu');
+                } else {
+                    $ffsulicencestatus = get_string('license_number_not_assigned', 'local_apsolu');
+                }
             }
         }
 
