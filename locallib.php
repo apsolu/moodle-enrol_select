@@ -960,3 +960,23 @@ function get_list_badge_color(int|string $status): string {
 
     return "light";
 }
+
+/**
+ * Retourne la classe de couleur associée au statut d'inscription pour le badge témoin de la liste d'inscription.
+ *
+ * @param int|string $status Code numérique d'une des constantes de classe (ACCEPTED, MAIN, WAIT et DELETED).
+ * @return string classe de couleur (warning, success...) associée au code de la liste, 'light' s'il n'est pas reconnu.
+ */
+function get_list_icon_classname(int|string $status): string {
+    $icons = [
+        enrol_select_plugin::ACCEPTED => 'check',
+        enrol_select_plugin::MAIN => 'circle-question',
+        enrol_select_plugin::WAIT => 'circle-exclamation',
+        enrol_select_plugin::DELETED => 'circle-xmark',
+    ];
+    if (isset($icons[$status])) {
+        return sprintf('fa fa-solid fa-%s list text-%s', $icons[$status], get_list_badge_color($status));
+    } else {
+        return 'fa fa-solid fa-circle-xmark list text-danger';
+    }
+}

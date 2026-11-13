@@ -17,6 +17,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 use local_apsolu\core\federation\course as FederationCourse;
+use local_apsolu\core\customfields;
 
 require_once($CFG->dirroot . '/enrol/select/locallib.php');
 
@@ -226,51 +227,158 @@ class enrol_select_plugin extends enrol_plugin {
     }
 
     /**
-     * Méthode permettant de récupérer la liste des utilisateurs dont l'inscription est valide/autorisée pour une péride donnée.
+     * Méthode permettant de récupérer la liste des utilisateurs inscrits à une session de cours, et de vérifier
+     * si l'inscription est autorisée (rôle, cohorte, contexte...)
      *
-     * @param int|string $courseid  Identifiant du cours.
-     * @param int|null   $timestart Horodatage UNIX représentant la date de début de la période à valider.
-     * @param int|null   $timeend   Horodatage UNIX représentant la date de fin de la période à valider.
+     * @param stdClass $session
+     * @param bool $getinvalid Activer la remontée des inscriptions non acceptées (activé par défaut).
+     * @param bool $getpastenrolments Activer la remontée des inscriptions terminées (activé par défaut).
      *
      * @return array Tableau contenant les utilisateurs indéxé par userid.
      */
-    public static function get_authorized_registred_users($courseid, $timestart = null, $timeend = null) {
+    public static function get_session_enrolled_users(
+        $session,
+        ?bool $getinvalid = true,
+        ?bool $getpastenrolments = true
+    ) {
         global $DB;
 
-        if ($timestart === null) {
-            $timestart = time();
-        }
+        $customfields = customfields::getCustomFields();
 
-        if ($timeend === null) {
-            $timeend = time();
-        }
-
-        $sql = "SELECT DISTINCT u.*" .
-            " FROM {user} u" .
-            " JOIN {user_enrolments} ue ON u.id = ue.userid" .
-            " JOIN {enrol} e ON e.id = ue.enrolid AND e.enrol = 'select'" .
-            " JOIN {role_assignments} ra ON u.id = ra.userid AND e.id = ra.itemid AND ra.component = 'enrol_select'" .
-            " JOIN {role} r ON r.id = ra.roleid" .
-            " JOIN {context} ctx ON ra.contextid = ctx.id AND ctx.instanceid = e.courseid" .
-            " JOIN {cohort_members} cm ON u.id = cm.userid" .
-            " JOIN {enrol_select_roles} esr ON r.id = esr.roleid AND e.id = esr.enrolid" .
-            " JOIN {enrol_select_cohorts} esc ON cm.cohortid = esc.cohortid AND e.id = esr.enrolid" .
-            " JOIN {apsolu_colleges_members} acm ON cm.cohortid = acm.cohortid" .
-            " JOIN {apsolu_colleges} ac ON ra.roleid = ac.roleid AND acm.collegeid = ac.id" .
-            " WHERE e.status = 0" . // Only active enrolments.
-            " AND ue.status = 0" .
-            " AND (ue.timestart < :timestart OR ue.timestart = 0)" .
-            " AND (ue.timeend > :timeend OR ue.timeend = 0)" .
-            " AND e.courseid = :courseid" .
-            " AND ctx.contextlevel = 50" . // Course level.
-            " AND r.archetype = 'student'";
+        $where = [];
+        $where[] = 'e.courseid = :courseid';
+        $where[] = 'e.status = 0'; // Seulement les méthodes d'inscription actives.
 
         $params = [];
-        $params['courseid'] = $courseid;
-        $params['timestart'] = $timestart;
-        $params['timeend'] = $timeend;
+        $params['courseid'] = $session->courseid;
 
-        return $DB->get_records_sql($sql, $params);
+        // On ne veut que les inscriptions acceptées.
+        if ($getinvalid === false) {
+            $where[] = '(ue.status = :status)';
+            $params['status'] = self::ACCEPTED;
+        }
+
+        $where[] = '(ue.timestart <= :timestart OR ue.timestart = 0)';
+        $params['timestart'] = $session->sessiontime;
+
+        if ($getpastenrolments === false) {
+            $where[] = '(ue.timeend >= :timeend OR ue.timeend = 0)';
+            $params['timeend'] = $session->sessiontime;
+        }
+
+        // Récupérer toutes les inscriptions.
+        $sql = "SELECT ue.id AS ueid, ue.status, ue.timestart, ue.timeend, ue.enrolid, ue.userid,
+                    ra.roleid AS roleid FROM {user_enrolments} ue
+                  JOIN {enrol} e ON e.id = ue.enrolid
+                  JOIN {role_assignments} ra ON ue.userid = ra.userid AND e.id = ra.itemid
+                  JOIN {role} r ON r.id = ra.roleid
+                 WHERE " . implode(' AND ', $where) . "
+              ORDER BY ue.userid, e.sortorder DESC";
+
+        $enrolments = $DB->get_records_sql($sql, $params);
+
+        if (empty($enrolments) == false) {
+            // Informations du profil utilisateur.
+            [$insql, $params] = $DB->get_in_or_equal(array_keys($enrolments), SQL_PARAMS_NAMED, 'inc');
+
+            $sql = "SELECT u.*, uid1.data AS apsolusesame
+                    FROM {user} u
+                LEFT JOIN {user_info_data} uid1 ON u.id = uid1.userid AND uid1.fieldid = :apsolusesame
+                    JOIN {user_enrolments} ue ON u.id = ue.userid
+                    WHERE ue.id $insql
+                ORDER BY u.lastname, u.firstname";
+
+            $params['apsolusesame'] = $customfields['apsolusesame']->id;
+            $userprofiles = $DB->get_records_sql($sql, $params);
+        }
+
+        // Créer un tableau avec une inscription par utilisateur : vérifier si l'inscription est autorisée, et
+        // s'il y a plusieurs inscriptions au cours on conserve celle qui est valide et/ou active.
+        $users = [];
+
+        foreach ($enrolments as $enrolment) {
+            $enrolment->isactive = $enrolment->timeend == 0 || $enrolment->timeend >= $session->sessiontime;
+            $enrolment->isvalid = $enrolment->status == self::ACCEPTED;
+
+            // Il y a déjà une inscription pour cet utilisateur ? On compare le caractère valide / actif des deux inscriptions.
+            if (isset($users[$enrolment->userid])) {
+                if ($getpastenrolments == false) {
+                    // Si la remontée des inscriptions du semestre précédent n'est pas activé,
+                    // il ne devrait pas y avoir plusieurs inscriptions pour un même utilisateur.
+                    if (defined('BEHAT_SITE_RUNNING') === false) {
+                        debugging(sprintf(
+                            "L’utilisateur #%s a plusieurs inscriptions enregistrées pour la même période sur le même cours %s",
+                            $enrolment->userid,
+                            $session->id
+                        ), $level = DEBUG_DEVELOPER);
+                    }
+                }
+                // Si les 2 méthodes sont équivalentes, celle qui a la valeur "sortorder" la plus haute est conservée
+                // (c'est la première dans le tableau grâce au tri inversé sur la colonne en question dans la requête).
+                $current = $users[$enrolment->userid]->enrolment; // Inscription déjà associée au profil.
+                if (
+                    ( (int) $current->isvalid + (int) $current->isactive ) >=
+                    ( (int) $enrolment->isactive + (int) $enrolment->isvalid)
+                ) {
+                    continue;
+                }
+            } else {
+                $users[$enrolment->userid] = $userprofiles[$enrolment->userid];
+            }
+
+            // Evaluer si l'inscription est autorisée.
+
+            // 1. On vérifie si l'étudiant est dans une cohorte et une population autorisées à s'inscrire à ce cours
+                // avec ce rôle (indépendemment de la validité du rôle).
+            $enrolment->isuserauthorized = true;
+
+            $sql = "SELECT COUNT(cm.cohortid) FROM {cohort_members} cm
+                JOIN {enrol_select_cohorts} esc ON cm.cohortid = esc.cohortid
+                JOIN {apsolu_colleges_members} acm ON cm.cohortid = acm.cohortid
+                JOIN {apsolu_colleges} ac ON acm.collegeid = ac.id
+                WHERE cm.userid = :userid AND esc.enrolid = :enrolid AND ac.roleid = :userrole";
+
+            $params = ['userid' => $enrolment->userid, 'enrolid' => $enrolment->enrolid, 'userrole' => $enrolment->roleid];
+
+            if (empty($DB->get_fieldset_sql($sql, $params)[0])) {
+                $enrolment->isuserauthorized = false;
+
+                if (defined('BEHAT_SITE_RUNNING') === false) {
+                    debugging(sprintf(
+                        "L’inscription (mdl_user_enrolments.id #%s) n’est pas correcte : " .
+                        "l'utilisateur n’est dans aucune cohorte autorisée à s’inscrire à ce cours avec ce rôle",
+                        $enrolment->ueid
+                    ), $level = DEBUG_DEVELOPER);
+                }
+            }
+
+            // 2. On vérifie si le rôle attribué est cohérent avec la méthode et le contexte.
+            $enrolment->isroleauthorized = true;
+
+            $sql = "SELECT COUNT(ra.id) FROM {role_assignments} ra
+                JOIN {enrol_select_roles} esr ON ra.roleid = esr.roleid AND esr.enrolid = ra.itemid
+                JOIN {context} ctx ON ra.contextid = ctx.id AND ctx.contextlevel = 50
+                JOIN {role} r ON r.id = ra.roleid AND r.archetype = 'student'
+                WHERE ra.userid = :userid AND ra.itemid = :enrolid AND ctx.instanceid = :courseid";
+
+            $params = ['userid' => $enrolment->userid, 'enrolid' => $enrolment->enrolid, 'courseid' => $session->courseid];
+
+            if (empty($DB->get_fieldset_sql($sql, $params)[0]) == true) {
+                $enrolment->isroleauthorized = false;
+                if (defined('BEHAT_SITE_RUNNING') === false) {
+                    debugging(sprintf(
+                        "L’inscription (mdl_user_enrolments.id #%s) n’est pas correcte : " .
+                        "l’utilisateur n’est associé à aucun rôle valide dans ce contexte.",
+                        $enrolment->ueid
+                    ), $level = DEBUG_DEVELOPER);
+                }
+            }
+
+            // On ajoute les informations de l'inscription au profil utilisateur.
+            $users[$enrolment->userid]->enrolment = $enrolment;
+        }
+
+        return $users;
     }
 
     /**

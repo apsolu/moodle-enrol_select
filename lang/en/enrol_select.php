@@ -203,6 +203,7 @@ $string['edit_listname_help'] = 'Chaîne servant à renommer l’intitulé de la
 $string['enrol_status'] = 'Statut d’inscription';
 $string['enrol_status_help'] = 'Chaîne servant à renommer le statut de l’inscription. {$a}.';
 $string['enrol_statusshort'] = 'Version courte';
+$string['enrolment_status'] = 'Statut de l’inscription';
 $string['formaterror'] = 'La valeur saisie doit respecter la formulation suivante : « {$a} »';
 $string['listname_strexample'] = 'nom de la liste';
 $string['reset_defaultvalues_ok'] = 'Les champs de la liste ont été repositionnés sur leurs valeurs par défaut.';

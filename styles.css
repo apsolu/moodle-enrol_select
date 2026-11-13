@@ -592,3 +592,7 @@ input[type="radio"][name^="renew"] {
 .capitalize:first-letter {
     text-transform: capitalize;
 }
+
+i.list.text-custom {
+    color: var(--apsolu-color-custom-3);
+}
