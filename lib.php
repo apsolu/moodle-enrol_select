@@ -231,8 +231,8 @@ class enrol_select_plugin extends enrol_plugin {
      * si l'inscription est autorisée (rôle, cohorte, contexte...)
      *
      * @param stdClass $session
-     * @param bool $getinvalid Activer la remontée des inscriptions non acceptées (activé par défaut).
-     * @param bool $getpastenrolments Activer la remontée des inscriptions terminées (activé par défaut).
+     * @param bool|null $getinvalid Activer la remontée des inscriptions non acceptées (activé par défaut).
+     * @param bool|null $getpastenrolments Activer la remontée des inscriptions terminées (activé par défaut).
      *
      * @return array Tableau contenant les utilisateurs indéxé par userid.
      */
