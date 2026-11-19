@@ -846,13 +846,27 @@ class enrol_select_plugin extends enrol_plugin {
      *
      * @return bool Vrai si les inscriptions sont ouvertes.
      */
-    public function is_enrol_period_active($instance) {
+    public function is_active_enrolment_period($instance) {
         $today = time();
 
-        $opening = ($instance->enrolstartdate === '0' || $instance->enrolstartdate <= $today);
-        $closing = ($instance->enrolenddate === '0' || $instance->enrolenddate >= $today);
+        $opening = (empty($instance->enrolstartdate) === true || $instance->enrolstartdate <= $today);
+        $closing = (empty($instance->enrolenddate) === true || $instance->enrolenddate >= $today);
 
         return ($opening && $closing);
+    }
+
+    /**
+     * Détermine si les inscriptions sont ouvertes.
+     *
+     * @param object $instance Objet de l'instance de la méthode d'inscription
+     *
+     * @return bool Vrai si les inscriptions sont ouvertes.
+     */
+    #[\core\attribute\deprecated('enrol_select_plugin::is_active_enrolment_period($instance)')]
+    public function is_enrol_period_active($instance) {
+        \core\deprecation::emit_deprecation(__METHOD__);
+
+        $this->is_active_enrolment_period($instance);
     }
 
     /**
