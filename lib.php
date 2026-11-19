@@ -802,6 +802,44 @@ class enrol_select_plugin extends enrol_plugin {
     }
 
     /**
+     * Détermine si le cours est ouvert.
+     *
+     * @param object $instance Objet de l'instance de la méthode d'inscription
+     *
+     * @return bool Vrai si le cours est ouvert.
+     */
+    public function is_active_course_period($instance) {
+        $today = time();
+
+        $opening = (empty($instance->customint7) === true || $instance->customint7 <= $today);
+        $closing = (empty($instance->customint8) === true || $instance->customint8 >= $today);
+
+        return ($opening && $closing);
+    }
+
+    /**
+     * Détermine si le cours est passé.
+     *
+     * @param object $instance Objet de l'instance de la méthode d'inscription
+     *
+     * @return bool Vrai si le cours est passé.
+     */
+    public function is_past_course($instance) {
+        return (empty($instance->customint8) === false && $instance->customint8 < time());
+    }
+
+    /**
+     * Détermine si le cours est à venir.
+     *
+     * @param object $instance Objet de l'instance de la méthode d'inscription
+     *
+     * @return bool Vrai si le cours est à venir.
+     */
+    public function is_upcoming_course($instance) {
+        return (empty($instance->customint7) === false && $instance->customint7 > time());
+    }
+
+    /**
      * Détermine si les inscriptions sont ouvertes.
      *
      * @param object $instance Objet de l'instance de la méthode d'inscription
