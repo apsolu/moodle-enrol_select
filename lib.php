@@ -189,6 +189,33 @@ class enrol_select_plugin extends enrol_plugin {
     }
 
     /**
+     * Returns localised name of enrol instance
+     *
+     * @param stdClass|null $instance (null is accepted too)
+     * @return string
+     */
+    public function get_instance_name($instance) {
+        global $DB;
+
+        if (empty($instance->name) === false) {
+            // Affiche le nom personnalisé de la méthode d'inscription.
+            $context = context_course::instance($instance->courseid);
+            return format_string($instance->name, true, ['context' => $context]);
+        }
+
+        if (empty($instance->customchar1) === false) {
+            // Affiche le nom du calendrier.
+            $calendar = $DB->get_record('apsolu_calendars', ['id' => $instance->customchar1]);
+            if ($calendar !== false) {
+                return $calendar->name;
+            }
+        }
+
+        // Affiche le nom générique de la méthode d'inscription.
+        return get_string('pluginname', 'enrol_select');
+    }
+
+    /**
      * Returns edit icons for the page with list of instances.
      *
      * @param stdClass $instance
