@@ -1237,7 +1237,7 @@ class enrol_select_plugin extends enrol_plugin {
     public function refill_main_list(stdClass $instance, $userid) {
         global $DB, $USER;
 
-        if ($this->is_enrol_period_active($instance) === false) {
+        if ($this->is_active_enrolment_period($instance) === false) {
             // On ne réalimente pas la liste principale si les inscriptions sont closes.
             return;
         }
