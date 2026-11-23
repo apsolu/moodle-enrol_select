@@ -138,7 +138,8 @@ if (empty($instance->role) === false && $instance->status !== false) {
 
         $roles[$roleid] = $role->localname;
     }
-} else { // Si l'utilisateur n'est pas inscrit : vérifier que le cours est ouvert à cet utilisateur.
+} else {
+    // Si l'utilisateur n'est pas inscrit : vérifier que le cours est ouvert à cet utilisateur.
     // Est-ce que le cours est plein ?
     if ($enrolselectplugin->get_available_status($enrol, $USER) !== false) {
         // Est-ce que l'utilisateur n'a pas dépassé son quota de voeux...

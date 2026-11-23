@@ -96,7 +96,8 @@ class manage_college_form extends dynamic_form {
             // Champ caché  : témoin pour déclencher la suppression plutôt que la modification de la règle.
             $mform->addElement('hidden', 'deletesubmit', 0);
             $mform->setType('deletesubmit', PARAM_INT);
-        } else { // Mode création (ajout d'une règle).
+        } else {
+            // Mode création (ajout d'une règle).
             // D'abord le calendrier.
             $mform->addElement($datepicker);
 
@@ -165,7 +166,8 @@ class manage_college_form extends dynamic_form {
             // différente de l'id de la tâche trouvée sur cette date en cas de modification d'une règle existante.
             if ($collegetasks[$data['nextdatetime']][$data['collegeid']]->taskid != $data['taskid']) {
                 $errors['nextdatetime'] = get_string('invalid_dateval', 'enrol_select');
-            } else if (empty($data['taskid']) == false) { // On vérifie s'il y a bien eu des changements (mode édition uniquement).
+            } else if (empty($data['taskid']) == false) {
+                // On vérifie s'il y a bien eu des changements (mode édition uniquement).
                 // La date de la tâche n'a pas été changée donc on vérifie les autres champs.
                 $current = $collegetasks[$data['nextdatetime']][$data['collegeid']];
                 if (

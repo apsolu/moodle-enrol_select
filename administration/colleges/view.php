@@ -65,7 +65,8 @@ foreach ($tasks as $date => $rules) {
     $collegelist = []; // Liste des populations qui ont une règle programmée ce jour là.
 
     foreach ($rules as $id => $rule) {
-        if (isset($colleges[$id])) { // On vérifie que la population décrite dans la règle existe.
+        if (isset($colleges[$id])) {
+            // On vérifie que la population décrite dans la règle existe.
             // Description de la règle.
             $rule->population = $colleges[$id]->name;
             $collegelist[] = $rule;

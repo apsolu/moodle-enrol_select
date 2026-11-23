@@ -763,7 +763,8 @@ function get_string_on_list_x(array|int $status, string $getstring, ?string $lis
         $reg = '/.*_on_(.*)_X/i'; // Ex. welcome_on_listname_X : la chaîne de caractères sera chargée avec le format listname.
         preg_match($reg, $getstring, $matches);
 
-        if (empty($matches[0]) != true) { // L'un des formats a été identifié dans le pattern ?
+        if (empty($matches[0]) != true) {
+            // L'un des formats a été identifié dans le pattern ?
             $listformat = $matches[1];
         }
     }

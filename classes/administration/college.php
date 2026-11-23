@@ -97,9 +97,11 @@ class college extends record {
         $customdata->maxregister = $formdata->maxregister;
         $customdata->minregister = $formdata->minregister;
 
-        if (empty($formdata->taskid) == false) { // Edition.
+        if (empty($formdata->taskid) == false) {
+            // Edition.
             wishtask::update_task($formdata->taskid, $customdata, $formdata->nextdatetime);
-        } else { // Création.
+        } else {
+            // Création.
             wishtask::create_task($customdata, $formdata->nextdatetime);
         }
     }

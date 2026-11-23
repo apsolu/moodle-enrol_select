@@ -160,7 +160,8 @@ class enrol_select_plugin extends enrol_plugin {
                     unset_config($strname, 'enrol_select');
 
                     $haschanged = true;
-                } else { // La valeur est ni vide ni identique à la valeur par défaut.
+                } else {
+                    // La valeur est ni vide ni identique à la valeur par défaut.
                     // Dans le cas du nom de la liste et de sa description, il y a un formatage qui est appliqué
                     // en amont, il faut donc extraire la chaîne non formatée.
                     if ($strtype == 'listname' || $strtype == 'description') {

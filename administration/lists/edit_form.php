@@ -87,7 +87,8 @@ class enrol_select_lists_form extends moodleform {
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
-        if (empty($data['listname']) == false) { // Pas de test de validation sur une chaîne vide.
+        if (empty($data['listname']) == false) {
+            // Pas de test de validation sur une chaîne vide.
             // Vérifier que le champs listname respecte le format souhaité.
             if (unformatstr($data['listname'], 'listname') == false) {
                 $errors['listname'] = self::get_validation_example('listname', get_string('listname_strexample', 'enrol_select'));
