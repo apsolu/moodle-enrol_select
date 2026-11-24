@@ -124,17 +124,18 @@ function enrol_select_get_activities($siteid = 0, $categoryid = 0, $categoryname
 function enrol_select_get_activities_roles() {
     global $DB;
 
-    $sql = "SELECT r.id, r.name, r.shortname, r.description, r.sortorder, r.archetype, ar.color, ar.fontawesomeid" .
-        " FROM {role} r" .
-        " LEFT JOIN {apsolu_roles} ar ON r.id = ar.id" .
-        " ORDER BY sortorder";
+    $sql = "SELECT r.id, r.name, r.shortname, r.description, r.sortorder, r.archetype, ar.color, ar.fontawesomeid
+              FROM {role} r
+         LEFT JOIN {apsolu_roles} ar ON r.id = ar.id";
     $roles = role_fix_names($DB->get_records_sql($sql));
 
     $activities = [];
 
     $sql = "SELECT e.courseid, esr.roleid
               FROM {enrol} e
-              JOIN {enrol_select_roles} esr ON e.id = esr.enrolid";
+              JOIN {enrol_select_roles} esr ON e.id = esr.enrolid
+              JOIN {role} r ON r.id = esr.roleid
+          ORDER BY r.sortorder";
     $recordset = $DB->get_recordset_sql($sql);
     foreach ($recordset as $record) {
         if (isset($roles[$record->roleid]) === false) {
