@@ -349,7 +349,11 @@ class overview implements renderable, templatable {
 
         $availableroles = enrol_select_get_custom_student_roles();
 
-        $recordset = $DB->get_recordset('enrol_select_roles');
+        $sql = "SELECT esr.*
+                  FROM {enrol_select_roles} esr
+                  JOIN {role} r ON r.id = esr.roleid
+              ORDER BY r.sortorder";
+        $recordset = $DB->get_recordset_sql($sql);
         foreach ($recordset as $record) {
             if (isset($availableroles[$record->roleid]) === false) {
                 continue;
