@@ -297,7 +297,7 @@ class enrol_select_plugin extends enrol_plugin {
         // Récupérer toutes les inscriptions.
         $sql = "SELECT ue.id AS ueid, ue.status, ue.timestart, ue.timeend, ue.enrolid, ue.userid,
                     ra.roleid AS roleid FROM {user_enrolments} ue
-                  JOIN {enrol} e ON e.id = ue.enrolid
+                  JOIN {enrol} e ON e.id = ue.enrolid AND e.enrol = 'select'
                   JOIN {role_assignments} ra ON ue.userid = ra.userid AND e.id = ra.itemid
                   JOIN {role} r ON r.id = ra.roleid
                  WHERE " . implode(' AND ', $where) . "
@@ -325,6 +325,16 @@ class enrol_select_plugin extends enrol_plugin {
         $users = [];
 
         foreach ($enrolments as $enrolment) {
+            if (isset($userprofiles[$enrolment->userid]) == false) {
+                if (defined('BEHAT_SITE_RUNNING') === false) {
+                        debugging(sprintf(
+                            "L’utilisateur #%s associé à l'inscription #%s n’existe pas.",
+                            $enrolment->userid,
+                            $enrolment->ueid,
+                        ), $level = DEBUG_DEVELOPER);
+                    continue;
+                }
+            }
             $enrolment->isactive = $enrolment->timeend == 0 || $enrolment->timeend >= $session->sessiontime;
             $enrolment->isvalid = $enrolment->status == self::ACCEPTED;
 
@@ -355,58 +365,88 @@ class enrol_select_plugin extends enrol_plugin {
             }
 
             // Evaluer si l'inscription est autorisée.
+            $diagnosis = self::diagnose_enrolment(
+                $enrolment->userid,
+                $enrolment->enrolid,
+                $enrolment->roleid,
+                $enrolment->ueid,
+                $session->courseid
+            );
 
             // 1. On vérifie si l'étudiant est dans une cohorte et une population autorisées à s'inscrire à ce cours
-                // avec ce rôle (indépendemment de la validité du rôle).
-            $enrolment->isuserauthorized = true;
-
-            $sql = "SELECT COUNT(cm.cohortid) FROM {cohort_members} cm
-                JOIN {enrol_select_cohorts} esc ON cm.cohortid = esc.cohortid
-                JOIN {apsolu_colleges_members} acm ON cm.cohortid = acm.cohortid
-                JOIN {apsolu_colleges} ac ON acm.collegeid = ac.id
-                WHERE cm.userid = :userid AND esc.enrolid = :enrolid AND ac.roleid = :userrole";
-
-            $params = ['userid' => $enrolment->userid, 'enrolid' => $enrolment->enrolid, 'userrole' => $enrolment->roleid];
-
-            if (empty($DB->get_fieldset_sql($sql, $params)[0])) {
-                $enrolment->isuserauthorized = false;
-
-                if (defined('BEHAT_SITE_RUNNING') === false) {
-                    debugging(sprintf(
-                        "L’inscription (mdl_user_enrolments.id #%s) n’est pas correcte : " .
-                        "l'utilisateur n’est dans aucune cohorte autorisée à s’inscrire à ce cours avec ce rôle",
-                        $enrolment->ueid
-                    ), $level = DEBUG_DEVELOPER);
-                }
-            }
-
-            // 2. On vérifie si le rôle attribué est cohérent avec la méthode et le contexte.
-            $enrolment->isroleauthorized = true;
-
-            $sql = "SELECT COUNT(ra.id) FROM {role_assignments} ra
-                JOIN {enrol_select_roles} esr ON ra.roleid = esr.roleid AND esr.enrolid = ra.itemid
-                JOIN {context} ctx ON ra.contextid = ctx.id AND ctx.contextlevel = 50
-                JOIN {role} r ON r.id = ra.roleid AND r.archetype = 'student'
-                WHERE ra.userid = :userid AND ra.itemid = :enrolid AND ctx.instanceid = :courseid";
-
-            $params = ['userid' => $enrolment->userid, 'enrolid' => $enrolment->enrolid, 'courseid' => $session->courseid];
-
-            if (empty($DB->get_fieldset_sql($sql, $params)[0]) == true) {
-                $enrolment->isroleauthorized = false;
-                if (defined('BEHAT_SITE_RUNNING') === false) {
-                    debugging(sprintf(
-                        "L’inscription (mdl_user_enrolments.id #%s) n’est pas correcte : " .
-                        "l’utilisateur n’est associé à aucun rôle valide dans ce contexte.",
-                        $enrolment->ueid
-                    ), $level = DEBUG_DEVELOPER);
-                }
-            }
+            // avec ce rôle (indépendemment de la validité du rôle).
+            $enrolment->isuserauthorized = $diagnosis["isuserauthorized"];
+            $enrolment->isroleauthorized = $diagnosis["isroleauthorized"];
 
             // On ajoute les informations de l'inscription au profil utilisateur.
             $users[$enrolment->userid]->enrolment = $enrolment;
         }
 
         return $users;
+    }
+    /**
+     * Évalue la cohérence et la validité des informations liées à l'inscription d'un utilisateur : vérifie la cohorte,
+     * la population et le rôle vis-à-vis du contexte et de la méthode d'inscription. Retourne 2 témoins de diagnostic :
+     * - isuserauthorized : l'utilisateur appartient à une cohorte et population autorisée pour cette méthode ?
+     * - isroleauthorized : le rôle attribué sur cette inscription est autorisé pour cette méthode et dans ce contexte ?
+     *
+     * @param integer $userid
+     * @param integer $enrolid
+     * @param integer $roleid
+     * @param integer $ueid User enrolment id
+     * @param integer $courseid
+     * @return array ["isuserauthorized", "isroleauthorized"]
+     */
+    public static function diagnose_enrolment(int $userid, int $enrolid, int $roleid, int $ueid, int $courseid): array {
+        global $DB;
+
+        // 1. On vérifie si l'étudiant est dans une cohorte et une population autorisées à s'inscrire à ce cours
+            // avec ce rôle (indépendemment de la validité du rôle).
+        $isuserauthorized = true;
+
+        $sql = "SELECT COUNT(cm.cohortid) FROM {cohort_members} cm
+            JOIN {enrol_select_cohorts} esc ON cm.cohortid = esc.cohortid
+            JOIN {apsolu_colleges_members} acm ON cm.cohortid = acm.cohortid
+            JOIN {apsolu_colleges} ac ON acm.collegeid = ac.id
+            WHERE cm.userid = :userid AND esc.enrolid = :enrolid AND ac.roleid = :userrole";
+
+        $params = ['userid' => $userid, 'enrolid' => $enrolid, 'userrole' => $roleid];
+
+        if (empty($DB->get_fieldset_sql($sql, $params)[0])) {
+            $isuserauthorized = false;
+
+            if (defined('BEHAT_SITE_RUNNING') === false) {
+                debugging(sprintf(
+                    "L’inscription (mdl_user_enrolments.id #%s) n’est pas correcte : " .
+                    "l'utilisateur n’est dans aucune cohorte autorisée à s’inscrire à ce cours avec ce rôle",
+                    $ueid
+                ), $level = DEBUG_DEVELOPER);
+            }
+        }
+
+        // 2. On vérifie si le rôle attribué est cohérent avec la méthode et le contexte.
+        $isroleauthorized = true;
+
+        $sql = "SELECT COUNT(ra.id) FROM {role_assignments} ra
+            JOIN {enrol_select_roles} esr ON ra.roleid = esr.roleid AND esr.enrolid = ra.itemid
+            JOIN {context} ctx ON ra.contextid = ctx.id AND ctx.contextlevel = 50
+            JOIN {role} r ON r.id = ra.roleid AND r.archetype = 'student'
+            WHERE ra.userid = :userid AND ra.itemid = :enrolid AND ctx.instanceid = :courseid";
+
+        $params = ['userid' => $userid, 'enrolid' => $enrolid, 'courseid' => $courseid];
+
+        if (empty($DB->get_fieldset_sql($sql, $params)[0]) == true) {
+            $isroleauthorized = false;
+            if (defined('BEHAT_SITE_RUNNING') === false) {
+                debugging(sprintf(
+                    "L’inscription (mdl_user_enrolments.id #%s) n’est pas correcte : " .
+                    "l’utilisateur n’est associé à aucun rôle valide dans ce contexte.",
+                    $ueid
+                ), $level = DEBUG_DEVELOPER);
+            }
+        }
+
+        return ["isuserauthorized" => $isuserauthorized, "isroleauthorized" => $isroleauthorized];
     }
 
     /**
