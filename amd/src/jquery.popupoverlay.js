@@ -578,6 +578,9 @@
                 callback(el, lastclicked[el.id], options.closetransitionend);
             }
 
+            // Ajout enora.
+            $el.trigger('popup:closed');
+
             if (options.type == 'tooltip') {
                 $(window).off('resize.' + el.id);
             }

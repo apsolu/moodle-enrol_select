@@ -390,11 +390,11 @@ class enrol_select_plugin extends enrol_plugin {
      * - isuserauthorized : l'utilisateur appartient à une cohorte et population autorisée pour cette méthode ?
      * - isroleauthorized : le rôle attribué sur cette inscription est autorisé pour cette méthode et dans ce contexte ?
      *
-     * @param integer $userid
-     * @param integer $enrolid
-     * @param integer $roleid
-     * @param integer $ueid User enrolment id
-     * @param integer $courseid
+     * @param int $userid user id
+     * @param int $enrolid enrol id
+     * @param int $roleid role id
+     * @param int $ueid User enrolment id
+     * @param int $courseid course id
      * @return array ["isuserauthorized", "isroleauthorized"]
      */
     public static function diagnose_enrolment(int $userid, int $enrolid, int $roleid, int $ueid, int $courseid): array {
